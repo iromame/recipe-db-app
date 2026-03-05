@@ -49,10 +49,19 @@ Retrieve API references and limits from:
 
 ## 設計原則 (Engineering Principles)
 - **Type Safety**: BackendからFrontendまで一貫したTypeScriptの型定義を維持する。
-- **Normalization**: レシピ、材料、工程は適切にテーブル分割する。
+- **Machine Readability (Schema.org & RecipeMD)**:
+  - レシピデータは機械可読性の高いフォーマットで管理し、将来的なAI連携やシステム移行に備える。
+  - 世界標準である Schema.org の Recipe ボキャブラリに準拠したデータ構造を厳格に維持する。
+    - `name`: 料理名
+    - `recipeCategory`: ジャンル（和食、イタリアン、デザート等）
+    - `prepTime` / `cookTime`: ISO 8601形式での時間管理（例：PT20M）
+    - `recipeIngredient`: 材料の配列
+    - `recipeInstructions`: 工程ごとのステップ（HowToStep）
+    - `suitableForKids`: 「子供向け」フラグ（2歳半などの年齢区分も含む）
+  - データ保存形式として、完全な正規化（RDB的アプローチ）に固執せず、RecipeMDのようなMarkdown＋YAMLフロントマター形式やJSONベースの構造化フォーマットを積極的に採用し、パースの容易さを担保する。
 - **Zero-Cost**: 追加の有料SaaSを使わず、Cloudflareのエコシステム内で完結させる。
 
 ## 今後のフェーズ
-1. MVP: レシピの基本CRUD（現在進行中）
+1. MVP: レシピの基本操作とSchema.org準拠データの保存・読み込み機能
 2. PWA化とキッチン向けUI最適化
 3. AIによる写真からのレシピ自動抽出 (OCR + Gemini API)
