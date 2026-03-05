@@ -1,65 +1,66 @@
-// src/App.tsx
-
 import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import viteLogo from "/vite.svg";
-import cloudflareLogo from "./assets/Cloudflare_Logo.svg";
-import honoLogo from "./assets/hono.svg";
+import { RecipeList } from "./components/RecipeList";
+import { RecipeDetail } from "./components/RecipeDetail";
+import { RecipeForm } from "./components/RecipeForm";
 import "./App.css";
 
+type ViewState = "list" | "detail" | "form";
+
 function App() {
-	const [count, setCount] = useState(0);
-	const [name, setName] = useState("unknown");
+	const [view, setView] = useState<ViewState>("list");
+	const [currentRecipeId, setCurrentRecipeId] = useState<string | null>(null);
+
+	const goToList = () => {
+		setCurrentRecipeId(null);
+		setView("list");
+	};
+
+	const goToDetail = (id: string) => {
+		setCurrentRecipeId(id);
+		setView("detail");
+	};
+
+	const goToForm = (id?: string) => {
+		setCurrentRecipeId(id || null);
+		setView("form");
+	};
 
 	return (
-		<>
-			<div>
-				<a href="https://vite.dev" target="_blank">
-					<img src={viteLogo} className="logo" alt="Vite logo" />
-				</a>
-				<a href="https://react.dev" target="_blank">
-					<img src={reactLogo} className="logo react" alt="React logo" />
-				</a>
-				<a href="https://hono.dev/" target="_blank">
-					<img src={honoLogo} className="logo cloudflare" alt="Hono logo" />
-				</a>
-				<a href="https://workers.cloudflare.com/" target="_blank">
-					<img
-						src={cloudflareLogo}
-						className="logo cloudflare"
-						alt="Cloudflare logo"
+		<div className="min-h-screen bg-gray-100 text-gray-900 font-sans p-4 md:p-8">
+			<header className="max-w-4xl mx-auto mb-8">
+				<h1
+					className="text-4xl font-extrabold text-blue-800 tracking-tight cursor-pointer inline-block"
+					onClick={goToList}
+				>
+					Family Recipe Kitchen
+				</h1>
+				<p className="text-gray-500 mt-2">A standard-compliant recipe database.</p>
+			</header>
+
+			<main className="max-w-4xl mx-auto">
+				{view === "list" && (
+					<RecipeList
+						onSelectRecipe={goToDetail}
+						onCreateNew={() => goToForm()}
 					/>
-				</a>
-			</div>
-			<h1>Vite + React + Hono + Cloudflare</h1>
-			<div className="card">
-				<button
-					onClick={() => setCount((count) => count + 1)}
-					aria-label="increment"
-				>
-					count is {count}
-				</button>
-				<p>
-					Edit <code>src/App.tsx</code> and save to test HMR
-				</p>
-			</div>
-			<div className="card">
-				<button
-					onClick={() => {
-						fetch("/api/")
-							.then((res) => res.json() as Promise<{ name: string }>)
-							.then((data) => setName(data.name));
-					}}
-					aria-label="get name"
-				>
-					Name from API is: {name}
-				</button>
-				<p>
-					Edit <code>worker/index.ts</code> to change the name
-				</p>
-			</div>
-			<p className="read-the-docs">Click on the logos to learn more</p>
-		</>
+				)}
+				{view === "detail" && currentRecipeId && (
+					<RecipeDetail
+						id={currentRecipeId}
+						onBack={goToList}
+						onEdit={goToForm}
+						onDelete={goToList}
+					/>
+				)}
+				{view === "form" && (
+					<RecipeForm
+						id={currentRecipeId || undefined}
+						onSave={goToList}
+						onCancel={view === "form" && currentRecipeId ? () => goToDetail(currentRecipeId) : goToList}
+					/>
+				)}
+			</main>
+		</div>
 	);
 }
 

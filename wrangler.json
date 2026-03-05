@@ -22,7 +22,8 @@
 		{
 			"binding": "recipe_db",
 			"database_name": "recipe-db",
-			"database_id": "7329f871-f3b5-4b92-8aae-65b453a2d22c"
+			"database_id": "7329f871-f3b5-4b92-8aae-65b453a2d22c",
+			"migrations_dir": "drizzle"
 		}
 	]
 	/**
