@@ -37,10 +37,10 @@ app.post("/api/recipes", async (c) => {
         recipeCategory: body.recipeCategory || null,
         prepTime: body.prepTime || null,
         cookTime: body.cookTime || null,
-        suitableForKids: body.suitableForKids ? JSON.stringify(body.suitableForKids) : null,
-        recipeIngredient: body.recipeIngredient ? JSON.stringify(body.recipeIngredient) : null,
-        recipeInstructions: body.recipeInstructions ? JSON.stringify(body.recipeInstructions) : null,
-        structuredData: JSON.stringify(body), // Store full original JSON for future-proofing
+        suitableForKids: body.suitableForKids || null,
+        recipeIngredient: body.recipeIngredient || null,
+        recipeInstructions: body.recipeInstructions || null,
+        structuredData: body, // Store full original JSON for future-proofing
     };
 
     await db.insert(recipes).values(newRecipe).run();
@@ -58,10 +58,10 @@ app.put("/api/recipes/:id", async (c) => {
     if (body.recipeCategory !== undefined) updateData.recipeCategory = body.recipeCategory;
     if (body.prepTime !== undefined) updateData.prepTime = body.prepTime;
     if (body.cookTime !== undefined) updateData.cookTime = body.cookTime;
-    if (body.suitableForKids !== undefined) updateData.suitableForKids = JSON.stringify(body.suitableForKids);
-    if (body.recipeIngredient !== undefined) updateData.recipeIngredient = JSON.stringify(body.recipeIngredient);
-    if (body.recipeInstructions !== undefined) updateData.recipeInstructions = JSON.stringify(body.recipeInstructions);
-    if (body.structuredData !== undefined) updateData.structuredData = JSON.stringify(body.structuredData);
+    if (body.suitableForKids !== undefined) updateData.suitableForKids = body.suitableForKids;
+    if (body.recipeIngredient !== undefined) updateData.recipeIngredient = body.recipeIngredient;
+    if (body.recipeInstructions !== undefined) updateData.recipeInstructions = body.recipeInstructions;
+    if (body.structuredData !== undefined) updateData.structuredData = body.structuredData;
 
     await db.update(recipes).set(updateData).where(eq(recipes.id, recipeId)).run();
 

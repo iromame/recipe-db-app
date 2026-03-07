@@ -20,6 +20,14 @@ export function RecipeDetail({ id, onBack, onEdit, onDelete }: { id: string, onB
         }
     };
 
+    const ingredients = typeof recipe?.recipeIngredient === "string"
+        ? JSON.parse(recipe.recipeIngredient)
+        : recipe?.recipeIngredient;
+
+    const instructions = typeof recipe?.recipeInstructions === "string"
+        ? JSON.parse(recipe.recipeInstructions)
+        : recipe?.recipeInstructions;
+
     if (loading) return <div>Loading...</div>;
     if (!recipe) return <div>Recipe not found.</div>;
 
@@ -44,11 +52,11 @@ export function RecipeDetail({ id, onBack, onEdit, onDelete }: { id: string, onB
                 {recipe.suitableForKids && <div><strong>Kid-Friendly:</strong> {recipe.suitableForKids.name}</div>}
             </div>
 
-            {recipe.recipeIngredient && recipe.recipeIngredient.length > 0 && (
+            {ingredients && ingredients.length > 0 && (
                 <div>
                     <h3 className="text-xl font-semibold mb-3 border-b pb-2">Ingredients</h3>
                     <ul className="list-disc pl-5 space-y-1">
-                        {recipe.recipeIngredient.map((ing, idx) => (
+                        {ingredients.map((ing: any, idx: number) => (
                             <li key={idx}>
                                 {ing.amount && <span className="font-medium mr-1">{ing.amount}</span>}
                                 {ing.unit && <span className="font-medium mr-1">{ing.unit}</span>}
@@ -59,11 +67,11 @@ export function RecipeDetail({ id, onBack, onEdit, onDelete }: { id: string, onB
                 </div>
             )}
 
-            {recipe.recipeInstructions && recipe.recipeInstructions.length > 0 && (
+            {instructions && instructions.length > 0 && (
                 <div>
                     <h3 className="text-xl font-semibold mb-3 border-b pb-2">Instructions</h3>
                     <ol className="list-decimal pl-5 space-y-3">
-                        {recipe.recipeInstructions.map((step, idx) => (
+                        {instructions.map((step: any, idx: number) => (
                             <li key={idx} className="pl-2">
                                 {step.text}
                             </li>

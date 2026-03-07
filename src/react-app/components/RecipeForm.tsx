@@ -14,11 +14,13 @@ export function RecipeForm({ id, onSave, onCancel }: { id?: string, onSave: (rec
             api.getRecipe(id).then(r => {
                 setRecipe(r);
                 if (r.recipeIngredient) {
+                    const ings = typeof r.recipeIngredient === "string" ? JSON.parse(r.recipeIngredient) : r.recipeIngredient;
                     // A simple representation for editing (just name for MVP)
-                    setIngredientsText(r.recipeIngredient.map(i => `${i.amount || ""} ${i.unit || ""} ${i.name}`.trim()).join("\n"));
+                    setIngredientsText(ings.map((i: any) => `${i.amount || ""} ${i.unit || ""} ${i.name}`.trim()).join("\n"));
                 }
                 if (r.recipeInstructions) {
-                    setInstructionsText(r.recipeInstructions.map(s => s.text).join("\n\n"));
+                    const insts = typeof r.recipeInstructions === "string" ? JSON.parse(r.recipeInstructions) : r.recipeInstructions;
+                    setInstructionsText(insts.map((s: any) => s.text).join("\n\n"));
                 }
             }).finally(() => setLoading(false));
         }
@@ -128,7 +130,7 @@ export function RecipeForm({ id, onSave, onCancel }: { id?: string, onSave: (rec
                 </div>
 
                 <div className="flex justify-end space-x-3 pt-4">
-                    <button type="button" onClick={onCancel} className="px-4 py-2 border rounded-md hover:bg-gray-50">Cancel</button>
+                    <button type="button" onClick={onCancel} className="px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-50">Cancel</button>
                     <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Save Recipe</button>
                 </div>
             </form>
