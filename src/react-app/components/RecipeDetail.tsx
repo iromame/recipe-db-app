@@ -5,6 +5,8 @@ import { Recipe } from "../types/schema.org";
 export function RecipeDetail({ id, onBack, onEdit, onDelete }: { id: string, onBack: () => void, onEdit: (id: string) => void, onDelete: (id: string) => void }) {
     const [recipe, setRecipe] = useState<Recipe | null>(null);
     const [loading, setLoading] = useState(true);
+    const [wakeLockEnabled, setWakeLockEnabled] = useState(false);
+    const [wakeLock, setWakeLock] = useState<any>(null);
 
     useEffect(() => {
         api.getRecipe(id)
@@ -17,6 +19,32 @@ export function RecipeDetail({ id, onBack, onEdit, onDelete }: { id: string, onB
         if (confirm("Are you sure you want to delete this recipe?")) {
             await api.deleteRecipe(id);
             onDelete(id);
+        }
+    };
+
+    useEffect(() => {
+        return () => {
+            if (wakeLock) wakeLock.release().catch(console.error);
+        };
+    }, [wakeLock]);
+
+    const toggleWakeLock = async () => {
+        if (wakeLockEnabled && wakeLock) {
+            await wakeLock.release();
+            setWakeLock(null);
+            setWakeLockEnabled(false);
+        } else {
+            try {
+                if ('wakeLock' in navigator) {
+                    const wl = await (navigator as any).wakeLock.request('screen');
+                    setWakeLock(wl);
+                    setWakeLockEnabled(true);
+                } else {
+                    alert("Screen Wake Lock API is not supported in this browser.");
+                }
+            } catch (err) {
+                console.error("Wake Lock error:", err);
+            }
         }
     };
 
@@ -40,7 +68,14 @@ export function RecipeDetail({ id, onBack, onEdit, onDelete }: { id: string, onB
                     <h2 className="text-3xl font-bold text-gray-800">{recipe.name}</h2>
                     {recipe.recipeCategory && <p className="text-sm font-medium text-gray-500 mt-1 uppercase tracking-wider">{recipe.recipeCategory}</p>}
                 </div>
-                <div className="space-x-2">
+                <div className="space-x-2 flex items-center">
+                    <button
+                        onClick={toggleWakeLock}
+                        className={`px-3 py-1 rounded text-sm ${wakeLockEnabled ? "bg-yellow-100 text-yellow-800 border-yellow-300" : "bg-gray-100 text-gray-600"} border`}
+                        title="Keep screen on while cooking"
+                    >
+                        {wakeLockEnabled ? "🌞 Screen On" : "🌙 Screen Normal"}
+                    </button>
                     <button onClick={() => onEdit(id)} className="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded">Edit</button>
                     <button onClick={handleDelete} className="px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded">Delete</button>
                 </div>

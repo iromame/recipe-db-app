@@ -10,7 +10,17 @@ const app = new Hono<{ Bindings: Env }>();
 app.get("/api/recipes", async (c) => {
     const db = drizzle(c.env.recipe_db);
     const allRecipes = await db.select().from(recipes).all();
-    return c.json(allRecipes);
+
+    // In some D1 environments, JSON columns are returned as strings despite mode: "json".
+    // We need to ensure they are properly parsed before sending to the frontend.
+    const parsedRecipes = allRecipes.map(r => ({
+        ...r,
+        recipeIngredient: typeof r.recipeIngredient === 'string' ? JSON.parse(r.recipeIngredient) : r.recipeIngredient,
+        recipeInstructions: typeof r.recipeInstructions === 'string' ? JSON.parse(r.recipeInstructions) : r.recipeInstructions,
+        structuredData: typeof r.structuredData === 'string' ? JSON.parse(r.structuredData) : r.structuredData,
+    }));
+
+    return c.json(parsedRecipes);
 });
 
 app.get("/api/recipes/:id", async (c) => {
@@ -22,7 +32,14 @@ app.get("/api/recipes/:id", async (c) => {
         return c.json({ error: "Recipe not found" }, 404);
     }
 
-    return c.json(recipe);
+    const parsedRecipe = {
+        ...recipe,
+        recipeIngredient: typeof recipe.recipeIngredient === 'string' ? JSON.parse(recipe.recipeIngredient) : recipe.recipeIngredient,
+        recipeInstructions: typeof recipe.recipeInstructions === 'string' ? JSON.parse(recipe.recipeInstructions) : recipe.recipeInstructions,
+        structuredData: typeof recipe.structuredData === 'string' ? JSON.parse(recipe.structuredData) : recipe.structuredData,
+    };
+
+    return c.json(parsedRecipe);
 });
 
 app.post("/api/recipes", async (c) => {
