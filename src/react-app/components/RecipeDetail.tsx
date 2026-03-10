@@ -48,13 +48,29 @@ export function RecipeDetail({ id, onBack, onEdit, onDelete }: { id: string, onB
         }
     };
 
-    const ingredients = typeof recipe?.recipeIngredient === "string"
-        ? JSON.parse(recipe.recipeIngredient)
-        : recipe?.recipeIngredient;
+    let ingredients = null;
+    try {
+        if (typeof recipe?.recipeIngredient === "string") {
+            const parsed = JSON.parse(recipe.recipeIngredient);
+            ingredients = typeof parsed === "string" ? JSON.parse(parsed) : parsed;
+        } else {
+            ingredients = recipe?.recipeIngredient;
+        }
+    } catch (e) {
+        console.error("Failed to parse ingredients", e);
+    }
 
-    const instructions = typeof recipe?.recipeInstructions === "string"
-        ? JSON.parse(recipe.recipeInstructions)
-        : recipe?.recipeInstructions;
+    let instructions = null;
+    try {
+        if (typeof recipe?.recipeInstructions === "string") {
+            const parsed = JSON.parse(recipe.recipeInstructions);
+            instructions = typeof parsed === "string" ? JSON.parse(parsed) : parsed;
+        } else {
+            instructions = recipe?.recipeInstructions;
+        }
+    } catch (e) {
+        console.error("Failed to parse instructions", e);
+    }
 
     if (loading) return <div>Loading...</div>;
     if (!recipe) return <div>Recipe not found.</div>;

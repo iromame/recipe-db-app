@@ -14,13 +14,22 @@ export function RecipeForm({ id, onSave, onCancel }: { id?: string, onSave: (rec
             api.getRecipe(id).then(r => {
                 setRecipe(r);
                 if (r.recipeIngredient) {
-                    const ings = typeof r.recipeIngredient === "string" ? JSON.parse(r.recipeIngredient) : r.recipeIngredient;
-                    // A simple representation for editing (just name for MVP)
-                    setIngredientsText(ings.map((i: any) => `${i.amount || ""} ${i.unit || ""} ${i.name}`.trim()).join("\n"));
+                    try {
+                        const parsed1 = typeof r.recipeIngredient === "string" ? JSON.parse(r.recipeIngredient) : r.recipeIngredient;
+                        const ings = typeof parsed1 === "string" ? JSON.parse(parsed1) : parsed1;
+                        if (Array.isArray(ings)) {
+                            setIngredientsText(ings.map((i: any) => `${i.amount || ""} ${i.unit || ""} ${i.name}`.trim()).join("\n"));
+                        }
+                    } catch (e) { console.error(e); }
                 }
                 if (r.recipeInstructions) {
-                    const insts = typeof r.recipeInstructions === "string" ? JSON.parse(r.recipeInstructions) : r.recipeInstructions;
-                    setInstructionsText(insts.map((s: any) => s.text).join("\n\n"));
+                    try {
+                        const parsed1 = typeof r.recipeInstructions === "string" ? JSON.parse(r.recipeInstructions) : r.recipeInstructions;
+                        const insts = typeof parsed1 === "string" ? JSON.parse(parsed1) : parsed1;
+                        if (Array.isArray(insts)) {
+                            setInstructionsText(insts.map((s: any) => s.text).join("\n\n"));
+                        }
+                    } catch (e) { console.error(e); }
                 }
             }).finally(() => setLoading(false));
         }
