@@ -28,13 +28,15 @@ function App() {
 	return (
 		<div className="min-h-screen bg-gray-100 text-gray-900 font-sans p-4 md:p-8">
 			<header className="max-w-4xl mx-auto mb-8">
-				<h1
-					className="text-4xl font-extrabold text-blue-800 tracking-tight cursor-pointer inline-block"
-					onClick={goToList}
-				>
-					Family Recipe Kitchen
-				</h1>
-				<p className="text-gray-500 mt-2">A standard-compliant recipe database.</p>
+				<div>
+					<h1
+						className="text-4xl font-extrabold text-blue-800 tracking-tight cursor-pointer inline-block"
+						onClick={goToList}
+					>
+						Family Recipe Kitchen
+					</h1>
+					<p className="text-gray-500 mt-2">A standard-compliant recipe database.</p>
+				</div>
 			</header>
 
 			<main className="max-w-4xl mx-auto">

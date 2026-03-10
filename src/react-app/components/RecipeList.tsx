@@ -5,14 +5,33 @@ import { Recipe } from "../types/schema.org";
 export function RecipeList({ onSelectRecipe, onCreateNew }: { onSelectRecipe: (id: string) => void, onCreateNew: () => void }) {
     const [recipes, setRecipes] = useState<Recipe[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
+        setLoading(true);
+        setError(null);
         api.getRecipes()
             .then(setRecipes)
+            .catch(err => {
+                console.error("Fetch error:", err);
+                setError(err.message || "Failed to load recipes");
+            })
             .finally(() => setLoading(false));
     }, []);
 
     if (loading) return <div className="text-gray-500">Loading recipes...</div>;
+    if (error) return (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+            <p className="font-bold">Error loading recipes:</p>
+            <p className="text-sm opacity-90">{error}</p>
+            <button
+                onClick={() => window.location.reload()}
+                className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm"
+            >
+                Retry (Reload App)
+            </button>
+        </div>
+    );
 
     return (
         <div className="space-y-4">
