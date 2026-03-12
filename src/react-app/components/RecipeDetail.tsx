@@ -101,6 +101,11 @@ export function RecipeDetail({ id, onBack, onEdit, onDelete }: { id: string, onB
                 {recipe.prepTime && <div><strong>Prep Time:</strong> {recipe.prepTime}</div>}
                 {recipe.cookTime && <div><strong>Cook Time:</strong> {recipe.cookTime}</div>}
                 {recipe.suitableForKids && <div><strong>Kid-Friendly:</strong> {recipe.suitableForKids.name}</div>}
+                {recipe.url && (
+                    <div className="flex-1 text-right">
+                        <strong>Source:</strong> <a href={recipe.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline break-all">{recipe.url}</a>
+                    </div>
+                )}
             </div>
 
             {ingredients && ingredients.length > 0 && (

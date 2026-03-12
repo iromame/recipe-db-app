@@ -22,5 +22,6 @@ export interface Recipe {
     suitableForKids?: AgeCategory;
     recipeIngredient?: RecipeIngredient[];
     recipeInstructions?: HowToStep[];
+    url?: string;
     structuredData?: any;
 }

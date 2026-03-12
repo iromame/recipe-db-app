@@ -10,6 +10,7 @@ export const recipes = sqliteTable("recipes", {
     suitableForKids: text("suitable_for_kids"), // JSON string or text flag
     recipeIngredient: text("recipe_ingredient", { mode: "json" }), // JSON array of ingredients
     recipeInstructions: text("recipe_instructions", { mode: "json" }), // JSON array or Markdown string of steps
+    url: text("url"), // Reference URL
     structuredData: text("structured_data", { mode: "json" }), // Full Schema.org JSON-LD (optional)
     createdAt: integer("created_at", { mode: "timestamp" })
         .notNull()

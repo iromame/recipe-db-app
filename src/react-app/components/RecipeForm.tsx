@@ -3,7 +3,7 @@ import { api } from "../api";
 import { Recipe, RecipeIngredient, HowToStep } from "../types/schema.org";
 
 export function RecipeForm({ id, onSave, onCancel }: { id?: string, onSave: (recipe: Recipe) => void, onCancel: () => void }) {
-    const [recipe, setRecipe] = useState<Partial<Recipe>>({ name: "", recipeCategory: "", prepTime: "", cookTime: "" });
+    const [recipe, setRecipe] = useState<Partial<Recipe>>({ name: "", recipeCategory: "", prepTime: "", cookTime: "", url: "" });
     const [ingredientsText, setIngredientsText] = useState("");
     const [instructionsText, setInstructionsText] = useState("");
     const [loading, setLoading] = useState(false);
@@ -114,6 +114,16 @@ export function RecipeForm({ id, onSave, onCancel }: { id?: string, onSave: (rec
                             className="w-full p-2 border rounded-md"
                         />
                     </div>
+                </div>
+
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Reference URL</label>
+                    <input
+                        type="url" placeholder="https://example.com/recipe"
+                        value={recipe.url || ""}
+                        onChange={e => setRecipe({ ...recipe, url: e.target.value })}
+                        className="w-full p-2 border rounded-md"
+                    />
                 </div>
 
                 <div>

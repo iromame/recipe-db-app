@@ -57,6 +57,7 @@ app.post("/api/recipes", async (c) => {
         suitableForKids: body.suitableForKids || null,
         recipeIngredient: body.recipeIngredient || null,
         recipeInstructions: body.recipeInstructions || null,
+        url: body.url || null,
         structuredData: body, // Store full original JSON for future-proofing
     };
 
@@ -78,6 +79,7 @@ app.put("/api/recipes/:id", async (c) => {
     if (body.suitableForKids !== undefined) updateData.suitableForKids = body.suitableForKids;
     if (body.recipeIngredient !== undefined) updateData.recipeIngredient = body.recipeIngredient;
     if (body.recipeInstructions !== undefined) updateData.recipeInstructions = body.recipeInstructions;
+    if (body.url !== undefined) updateData.url = body.url;
     if (body.structuredData !== undefined) updateData.structuredData = body.structuredData;
 
     await db.update(recipes).set(updateData).where(eq(recipes.id, recipeId)).run();
