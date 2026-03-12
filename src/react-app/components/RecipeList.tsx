@@ -37,12 +37,22 @@ export function RecipeList({ onSelectRecipe, onCreateNew }: { onSelectRecipe: (i
         <div className="space-y-4">
             <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-bold">My Recipes</h2>
-                <button
-                    onClick={onCreateNew}
-                    className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg shadow-sm"
-                >
-                    + Add Recipe
-                </button>
+                <div className="flex space-x-2">
+                    <a
+                        href="/api/export"
+                        download
+                        className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-lg shadow-sm flex items-center"
+                        title="Export all recipes as JSON"
+                    >
+                        📥 Export
+                    </a>
+                    <button
+                        onClick={onCreateNew}
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg shadow-sm"
+                    >
+                        + Add Recipe
+                    </button>
+                </div>
             </div>
 
             {recipes.length === 0 ? (
@@ -56,7 +66,19 @@ export function RecipeList({ onSelectRecipe, onCreateNew }: { onSelectRecipe: (i
                             className="bg-white p-4 border rounded-xl shadow-sm hover:shadow-md cursor-pointer transition-shadow"
                         >
                             <h3 className="text-lg font-semibold">{r.name}</h3>
-                            {r.recipeCategory && <p className="text-sm text-gray-500 mt-1">{r.recipeCategory}</p>}
+                            <div className="flex flex-wrap gap-1 mt-2">
+                                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold uppercase ${r.cookingMode === 'MAKE_AHEAD' ? 'bg-purple-100 text-purple-700' :
+                                        r.cookingMode === 'LUNCH' ? 'bg-orange-100 text-orange-700' :
+                                            'bg-blue-100 text-blue-700'
+                                    }`}>
+                                    {r.cookingMode?.replace('_', ' ')}
+                                </span>
+                                {r.tags?.map(t => (
+                                    <span key={t} className="text-[10px] px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded-full">
+                                        #{t}
+                                    </span>
+                                ))}
+                            </div>
                             <div className="flex text-xs text-gray-400 mt-4 space-x-4">
                                 {r.prepTime && <span>Prep: {r.prepTime}</span>}
                                 {r.cookTime && <span>Cook: {r.cookTime}</span>}

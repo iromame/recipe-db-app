@@ -83,7 +83,19 @@ export function RecipeDetail({ id, onBack, onEdit, onDelete }: { id: string, onB
             <div className="flex justify-between items-start">
                 <div>
                     <h2 className="text-3xl font-bold text-gray-800">{recipe.name}</h2>
-                    {recipe.recipeCategory && <p className="text-sm font-medium text-gray-500 mt-1 uppercase tracking-wider">{recipe.recipeCategory}</p>}
+                    <div className="flex flex-wrap gap-2 mt-2">
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider ${recipe.cookingMode === 'MAKE_AHEAD' ? 'bg-purple-100 text-purple-700' :
+                                recipe.cookingMode === 'LUNCH' ? 'bg-orange-100 text-orange-700' :
+                                    'bg-blue-100 text-blue-700'
+                            }`}>
+                            {recipe.cookingMode?.replace('_', ' ')}
+                        </span>
+                        {recipe.tags?.map(t => (
+                            <span key={t} className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs">
+                                #{t}
+                            </span>
+                        ))}
+                    </div>
                 </div>
                 <div className="space-x-2 flex items-center">
                     <button

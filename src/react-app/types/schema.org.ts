@@ -10,13 +10,15 @@ export interface HowToStep {
 
 export interface AgeCategory {
     name: string;
-    minAge?: number;
+    ageRange?: string;
 }
 
 export interface Recipe {
     id?: string;
     name: string;
+    cookingMode: "MAKE_AHEAD" | "LUNCH" | "DINNER";
     recipeCategory?: string;
+    tags?: string[];
     prepTime?: string;
     cookTime?: string;
     suitableForKids?: AgeCategory;

@@ -35,33 +35,69 @@ Retrieve API references and limits from:
 
 # Project: Family Recipe Database (10-Year Vision)
 
-## 最終到達点 (Final Goal)
-- 夫婦で共有し、10年以上メンテナンスフリーで運用できる堅牢なレシピ管理システム。
-- 運用コストをゼロ（Cloudflare Free Tier）に抑える。
-- キッチンでの利便性を追求（PWA, Screen Wake Lock）。
+## 1. 最終到達点 (Final Goal)
 
-## 技術スタック (Tech Stack)
-- **Runtime**: Cloudflare Workers (Hono)
-- **Database**: Cloudflare D1 (SQLite) + Drizzle ORM
-- **Frontend**: React (Vite) + Tailwind CSS
-- **Security**: Cloudflare Zero Trust (Access)
-- **Standard**: Schema.org (Recipe) 準拠のデータ構造
+* 夫婦で共有し、10年以上メンテナンスフリーで運用できる堅牢なレシピ管理システム。
+* 運用コストをゼロ（Cloudflare Free Tier）に完全に抑える。
+* キッチンでの利便性を追求（PWA, Screen Wake Lock, 片手操作UX）。
 
-## 設計原則 (Engineering Principles)
-- **Type Safety**: BackendからFrontendまで一貫したTypeScriptの型定義を維持する。
-- **Machine Readability (Schema.org & RecipeMD)**:
-  - レシピデータは機械可読性の高いフォーマットで管理し、将来的なAI連携やシステム移行に備える。
-  - 世界標準である Schema.org の Recipe ボキャブラリに準拠したデータ構造を厳格に維持する。
-    - `name`: 料理名
-    - `recipeCategory`: ジャンル（和食、イタリアン、デザート等）
-    - `prepTime` / `cookTime`: ISO 8601形式での時間管理（例：PT20M）
-    - `recipeIngredient`: 材料の配列
-    - `recipeInstructions`: 工程ごとのステップ（HowToStep）
-    - `suitableForKids`: 「子供向け」フラグ（2歳半などの年齢区分も含む）
-  - データ保存形式として、完全な正規化（RDB的アプローチ）に固執せず、RecipeMDのようなMarkdown＋YAMLフロントマター形式やJSONベースの構造化フォーマットを積極的に採用し、パースの容易さを担保する。
-- **Zero-Cost**: 追加の有料SaaSを使わず、Cloudflareのエコシステム内で完結させる。
+## 2. 技術スタック (Tech Stack)
 
-## 今後のフェーズ
-1. MVP: レシピの基本操作とSchema.org準拠データの保存・読み込み機能
-2. PWA化とキッチン向けUI最適化
-3. AIによる写真からのレシピ自動抽出 (OCR + Gemini API)
+* **Runtime**: Cloudflare Workers (Hono) 
+
+
+* **Database**: Cloudflare D1 (SQLite) + Drizzle ORM
+* **Frontend**: React (Vite) + Tailwind CSS + shadcn/ui
+* **Security**: Cloudflare Zero Trust (Access) によるメール制限
+* **Standard**: Schema.org (Recipe) 準拠のデータ構造 
+
+
+
+## 3. 設計原則 (Engineering Principles)
+
+* **Type Safety**: BackendからFrontendまで一貫したTypeScriptの型定義を維持する。
+* **Machine Readability**: 世界標準である Schema.org の Recipe ボキャブラリに準拠したデータ構造を厳格に維持する。
+* `prepTime` / `cookTime`: **ISO 8601** 形式（例：`PT20M`）で保存。
+* `suitableForKids`: 「子供向け」フラグ（2歳半などの年齢区分も含む） 。
+
+
+
+
+* **Data Portability**: 10年後もデータを活用できるよう、全データを一括でJSON書き出しするエンドポイントを必須とする。
+
+## 4. 分類設計 (Classification Architecture)
+
+### A. 調理モード (主軸 / Primary Axis)
+
+レシピの利用シーンを決定する最上位の排他的分類（Enum的管理）。
+
+* **作り置き (MAKE_AHEAD):** 土日などの「仕込調理」フェーズで活用。
+* **お昼ごはん (LUNCH):** 平日や休日にその場でパパッと作る都度調理。
+* **晩ごはん (DINNER):** 数品のおかずを構成する、しっかりとした都度調理。
+* **UI要件:** 登録画面最上部に、親指でタップしやすい大きな「セグメントコントロール」を配置する。
+
+### B. タグ (小分類 / Secondary Axis)
+
+レシピの性質を多次元的に肉付けし、柔軟な検索を可能にするメタデータ。
+
+* **目的:** 「鶏肉」かつ「レンジ」かつ「子供向け」といった高度なAND検索を実現するため。
+* **管理形式:** `tags` テーブルと `recipe_tags` 中間テーブルによる「多対多（Many-to-Many）」のリレーションシップを構築する。
+* **自動クレンジング:** 保存時にタグ名のトリミングと小文字化を自動で行い、表記揺れを排除する。
+
+## 5. モバイル特化UI/UX 要件
+
+* **Thumb Zone 設計:** 重要なボタンや入力エリアは画面の下半分に配置し、大画面スマホでも片手（親指）で操作を完結できるレイアウトにする。
+* **調理時間ピッカー:** 直接数値を打たせず、上下スワイプの「ドラムロール式ピッカー」と、「15分」「30分」といった頻出時間の「クイック選択チップ」を併用する。
+* **Creatable Multi-Select:** タグ入力には `shadcn/ui` の Combobox 等を活用し、既存タグの検索と「その場での新規タグ作成」をシームレスに行えるようにする。
+* **スリープ防止:** レシピ閲覧画面では `Screen Wake Lock API` を利用し、調理中に画面が消えるのを防止する。
+
+## 6. 開発フェーズ (Phases)
+
+1. **MVP:** `AGENTS.md` の多対多リレーションと ISO 8601 準拠を確認し、Drizzle スキーマを作成。Hono で CRUD API を実装。
+2. **UI実装:** スマホでの「片手操作」を重視し、ドラムロール式ピッカーと Creatable なタグ入力フォームを実装。
+3. **PWA & UX:** PWA化（`vite-plugin-pwa`）と `Screen Wake Lock` の組み込み。
+4. **AI拡張:** 写真からのレシピ自動抽出 (OCR + Gemini API)。
+
+---
+
+なお、WSL環境でAntigravityを使用する場合、Windows側のブラウザと正しく通信するために `.wslconfig` で `networkingMode=mirrored` を設定することが推奨されています。デプロイに関しては、Cloudflareの無料枠内で5GBのストレージと1日500万回の読み取りが可能であるため、個人のレシピDBとしては十分すぎる容量が確保できます。

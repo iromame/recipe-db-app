@@ -1,27 +1,79 @@
 import { Hono } from "hono";
 import { drizzle } from "drizzle-orm/d1";
-import { eq } from "drizzle-orm";
-import { recipes } from "../db/schema";
-
-// To keep things simple and zero-dependency, let's use standard Web Crypto API.
+import { eq, inArray } from "drizzle-orm";
+import { recipes, tags, recipeTags } from "../db/schema";
 
 const app = new Hono<{ Bindings: Env }>();
+
+// Helper to sync tags for a recipe
+async function syncTags(db: any, recipeId: string, tagNames: string[]) {
+    if (!tagNames) return;
+
+    // 1. Clean and normalize tag names
+    const cleanTagNames = [...new Set(tagNames.map((t: string) => t.trim().toLowerCase()).filter(t => t.length > 0))];
+
+    // 2. Get existing tags or create new ones
+    const existingTags = await db.select().from(tags).all() as { id: string, name: string }[];
+    const tagMap = new Map(existingTags.map(t => [t.name, t.id]));
+
+    const neededTagIds: string[] = [];
+
+    for (const name of cleanTagNames) {
+        let tagId = tagMap.get(name);
+        if (!tagId) {
+            tagId = crypto.randomUUID();
+            await db.insert(tags).values({ id: tagId, name }).run();
+            tagMap.set(name, tagId);
+        }
+        neededTagIds.push(tagId as string);
+    }
+
+    // 3. Update associations
+    await db.delete(recipeTags).where(eq(recipeTags.recipeId, recipeId)).run();
+    if (neededTagIds.length > 0) {
+        for (const tagId of neededTagIds) {
+            await db.insert(recipeTags).values({ recipeId, tagId }).run();
+        }
+    }
+}
+
+// Helper to get tags for multiple recipes
+async function attachTags(db: any, recipeList: any[]) {
+    if (recipeList.length === 0) return [];
+
+    const recipeIds = recipeList.map(r => r.id);
+    const associations = await db.select({
+        recipeId: recipeTags.recipeId,
+        tagName: tags.name
+    })
+        .from(recipeTags)
+        .innerJoin(tags, eq(recipeTags.tagId, tags.id))
+        .where(inArray(recipeTags.recipeId, recipeIds))
+        .all() as { recipeId: string, tagName: string }[];
+
+    const tagLookup = associations.reduce((acc: Record<string, string[]>, curr) => {
+        if (!acc[curr.recipeId]) acc[curr.recipeId] = [];
+        acc[curr.recipeId].push(curr.tagName);
+        return acc;
+    }, {});
+
+    return recipeList.map((r: any) => ({
+        ...r,
+        cookingMode: r.cookingMode || (r.recipeCategory?.includes("昼") ? "LUNCH" : r.recipeCategory?.includes("作り置き") ? "MAKE_AHEAD" : "MAKE_AHEAD"),
+        tags: tagLookup[r.id] || [],
+        recipeIngredient: typeof r.recipeIngredient === 'string' ? JSON.parse(r.recipeIngredient) : r.recipeIngredient,
+        recipeInstructions: typeof r.recipeInstructions === 'string' ? JSON.parse(r.recipeInstructions) : r.recipeInstructions,
+        images: typeof r.images === 'string' ? JSON.parse(r.images) : r.images,
+        suitableForKids: typeof r.suitableForKids === 'string' ? JSON.parse(r.suitableForKids) : r.suitableForKids,
+        structuredData: typeof r.structuredData === 'string' ? JSON.parse(r.structuredData) : r.structuredData,
+    }));
+}
 
 app.get("/api/recipes", async (c) => {
     const db = drizzle(c.env.recipe_db);
     const allRecipes = await db.select().from(recipes).all();
-
-    // In some D1 environments, JSON columns are returned as strings despite mode: "json".
-    // We need to ensure they are properly parsed before sending to the frontend.
-    const parsedRecipes = allRecipes.map(r => ({
-        ...r,
-        recipeIngredient: typeof r.recipeIngredient === 'string' ? JSON.parse(r.recipeIngredient) : r.recipeIngredient,
-        recipeInstructions: typeof r.recipeInstructions === 'string' ? JSON.parse(r.recipeInstructions) : r.recipeInstructions,
-        images: typeof r.images === 'string' ? JSON.parse(r.images) : r.images,
-        structuredData: typeof r.structuredData === 'string' ? JSON.parse(r.structuredData) : r.structuredData,
-    }));
-
-    return c.json(parsedRecipes);
+    const results = await attachTags(db, allRecipes);
+    return c.json(results);
 });
 
 app.get("/api/recipes/:id", async (c) => {
@@ -29,30 +81,21 @@ app.get("/api/recipes/:id", async (c) => {
     const recipeId = c.req.param("id");
     const recipe = await db.select().from(recipes).where(eq(recipes.id, recipeId)).get();
 
-    if (!recipe) {
-        return c.json({ error: "Recipe not found" }, 404);
-    }
+    if (!recipe) return c.json({ error: "Recipe not found" }, 404);
 
-    const parsedRecipe = {
-        ...recipe,
-        recipeIngredient: typeof recipe.recipeIngredient === 'string' ? JSON.parse(recipe.recipeIngredient) : recipe.recipeIngredient,
-        recipeInstructions: typeof recipe.recipeInstructions === 'string' ? JSON.parse(recipe.recipeInstructions) : recipe.recipeInstructions,
-        images: typeof recipe.images === 'string' ? JSON.parse(recipe.images) : recipe.images,
-        structuredData: typeof recipe.structuredData === 'string' ? JSON.parse(recipe.structuredData) : recipe.structuredData,
-    };
-
-    return c.json(parsedRecipe);
+    const [enriched] = await attachTags(db, [recipe]);
+    return c.json(enriched);
 });
 
 app.post("/api/recipes", async (c) => {
     const db = drizzle(c.env.recipe_db);
     const body = await c.req.json();
-    // Body expected to match Schema.org Recipe structure mapped to our schema
 
     const newId = crypto.randomUUID();
     const newRecipe = {
         id: newId,
         name: body.name || "Untitled Recipe",
+        cookingMode: body.cookingMode || "MAKE_AHEAD",
         recipeCategory: body.recipeCategory || null,
         prepTime: body.prepTime || null,
         cookTime: body.cookTime || null,
@@ -61,12 +104,16 @@ app.post("/api/recipes", async (c) => {
         recipeInstructions: body.recipeInstructions || null,
         url: body.url || null,
         images: body.images || null,
-        structuredData: body, // Store full original JSON for future-proofing
+        structuredData: body,
+        createdAt: new Date(),
     };
 
     await db.insert(recipes).values(newRecipe).run();
+    if (body.tags) {
+        await syncTags(db, newId, body.tags);
+    }
 
-    return c.json(newRecipe, 201);
+    return c.json({ ...newRecipe, tags: body.tags || [] }, 201);
 });
 
 app.put("/api/recipes/:id", async (c) => {
@@ -76,6 +123,7 @@ app.put("/api/recipes/:id", async (c) => {
 
     const updateData: any = {};
     if (body.name !== undefined) updateData.name = body.name;
+    if (body.cookingMode !== undefined) updateData.cookingMode = body.cookingMode;
     if (body.recipeCategory !== undefined) updateData.recipeCategory = body.recipeCategory;
     if (body.prepTime !== undefined) updateData.prepTime = body.prepTime;
     if (body.cookTime !== undefined) updateData.cookTime = body.cookTime;
@@ -88,14 +136,17 @@ app.put("/api/recipes/:id", async (c) => {
 
     await db.update(recipes).set(updateData).where(eq(recipes.id, recipeId)).run();
 
-    return c.json({ success: true, updated: recipeId });
+    if (body.tags !== undefined) {
+        await syncTags(db, recipeId, body.tags);
+    }
+
+    return c.json({ success: true });
 });
 
 app.delete("/api/recipes/:id", async (c) => {
     const db = drizzle(c.env.recipe_db);
     const recipeId = c.req.param("id");
 
-    // Optional: Delete images from R2 when recipe is deleted
     const recipe = await db.select().from(recipes).where(eq(recipes.id, recipeId)).get();
     if (recipe && recipe.images) {
         const imageKeys = typeof recipe.images === 'string' ? JSON.parse(recipe.images) : recipe.images;
@@ -107,7 +158,23 @@ app.delete("/api/recipes/:id", async (c) => {
     }
 
     await db.delete(recipes).where(eq(recipes.id, recipeId)).run();
+    // recipe_tags will be deleted by cascade
     return c.json({ success: true });
+});
+
+// Data Export (10-year vision)
+app.get("/api/export", async (c) => {
+    const db = drizzle(c.env.recipe_db);
+    const allRecipes = await db.select().from(recipes).all();
+    const enriched = await attachTags(db, allRecipes);
+
+    return c.json({
+        version: "1.0",
+        exportedAt: new Date().toISOString(),
+        recipes: enriched
+    }, 200, {
+        "Content-Disposition": 'attachment; filename="recipes-export.json"'
+    });
 });
 
 // Image Proxy / Delivery
@@ -143,9 +210,8 @@ app.post("/api/recipes/:id/images", async (c) => {
         httpMetadata: { contentType: file.type },
     });
 
-    // Update recipe record with the new image key
     const currentImages = recipe.images ? (typeof recipe.images === 'string' ? JSON.parse(recipe.images) : recipe.images) : [];
-    const updatedImages = [...currentImages, key].slice(-3); // Max 3 images
+    const updatedImages = [...currentImages, key].slice(-3);
 
     await db.update(recipes).set({ images: updatedImages }).where(eq(recipes.id, recipeId)).run();
 
