@@ -17,6 +17,7 @@ app.get("/api/recipes", async (c) => {
         ...r,
         recipeIngredient: typeof r.recipeIngredient === 'string' ? JSON.parse(r.recipeIngredient) : r.recipeIngredient,
         recipeInstructions: typeof r.recipeInstructions === 'string' ? JSON.parse(r.recipeInstructions) : r.recipeInstructions,
+        images: typeof r.images === 'string' ? JSON.parse(r.images) : r.images,
         structuredData: typeof r.structuredData === 'string' ? JSON.parse(r.structuredData) : r.structuredData,
     }));
 
@@ -36,6 +37,7 @@ app.get("/api/recipes/:id", async (c) => {
         ...recipe,
         recipeIngredient: typeof recipe.recipeIngredient === 'string' ? JSON.parse(recipe.recipeIngredient) : recipe.recipeIngredient,
         recipeInstructions: typeof recipe.recipeInstructions === 'string' ? JSON.parse(recipe.recipeInstructions) : recipe.recipeInstructions,
+        images: typeof recipe.images === 'string' ? JSON.parse(recipe.images) : recipe.images,
         structuredData: typeof recipe.structuredData === 'string' ? JSON.parse(recipe.structuredData) : recipe.structuredData,
     };
 
@@ -58,6 +60,7 @@ app.post("/api/recipes", async (c) => {
         recipeIngredient: body.recipeIngredient || null,
         recipeInstructions: body.recipeInstructions || null,
         url: body.url || null,
+        images: body.images || null,
         structuredData: body, // Store full original JSON for future-proofing
     };
 
@@ -80,6 +83,7 @@ app.put("/api/recipes/:id", async (c) => {
     if (body.recipeIngredient !== undefined) updateData.recipeIngredient = body.recipeIngredient;
     if (body.recipeInstructions !== undefined) updateData.recipeInstructions = body.recipeInstructions;
     if (body.url !== undefined) updateData.url = body.url;
+    if (body.images !== undefined) updateData.images = body.images;
     if (body.structuredData !== undefined) updateData.structuredData = body.structuredData;
 
     await db.update(recipes).set(updateData).where(eq(recipes.id, recipeId)).run();
@@ -90,8 +94,62 @@ app.put("/api/recipes/:id", async (c) => {
 app.delete("/api/recipes/:id", async (c) => {
     const db = drizzle(c.env.recipe_db);
     const recipeId = c.req.param("id");
+
+    // Optional: Delete images from R2 when recipe is deleted
+    const recipe = await db.select().from(recipes).where(eq(recipes.id, recipeId)).get();
+    if (recipe && recipe.images) {
+        const imageKeys = typeof recipe.images === 'string' ? JSON.parse(recipe.images) : recipe.images;
+        if (Array.isArray(imageKeys)) {
+            for (const key of imageKeys) {
+                await c.env.IMAGES.delete(key);
+            }
+        }
+    }
+
     await db.delete(recipes).where(eq(recipes.id, recipeId)).run();
     return c.json({ success: true });
+});
+
+// Image Proxy / Delivery
+app.get("/api/images/:key{.+$}", async (c) => {
+    const key = c.req.param("key");
+    const object = await c.env.IMAGES.get(key);
+    if (!object) return c.json({ error: "Image not found" }, 404);
+
+    const headers = new Headers();
+    object.writeHttpMetadata(headers);
+    headers.set("etag", object.httpEtag);
+    headers.set("Cache-Control", "public, max-age=31536000, immutable");
+
+    return new Response(object.body, { headers });
+});
+
+// Image Upload
+app.post("/api/recipes/:id/images", async (c) => {
+    const db = drizzle(c.env.recipe_db);
+    const recipeId = c.req.param("id");
+
+    const recipe = await db.select().from(recipes).where(eq(recipes.id, recipeId)).get();
+    if (!recipe) return c.json({ error: "Recipe not found" }, 404);
+
+    const body = await c.req.parseBody();
+    const file = body["file"];
+    if (!(file instanceof File)) {
+        return c.json({ error: "Invalid file upload" }, 400);
+    }
+
+    const key = `${recipeId}/${crypto.randomUUID()}-${file.name}`;
+    await c.env.IMAGES.put(key, file.stream(), {
+        httpMetadata: { contentType: file.type },
+    });
+
+    // Update recipe record with the new image key
+    const currentImages = recipe.images ? (typeof recipe.images === 'string' ? JSON.parse(recipe.images) : recipe.images) : [];
+    const updatedImages = [...currentImages, key].slice(-3); // Max 3 images
+
+    await db.update(recipes).set({ images: updatedImages }).where(eq(recipes.id, recipeId)).run();
+
+    return c.json({ key });
 });
 
 export default app;

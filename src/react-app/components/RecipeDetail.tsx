@@ -7,6 +7,7 @@ export function RecipeDetail({ id, onBack, onEdit, onDelete }: { id: string, onB
     const [loading, setLoading] = useState(true);
     const [wakeLockEnabled, setWakeLockEnabled] = useState(false);
     const [wakeLock, setWakeLock] = useState<any>(null);
+    const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
     useEffect(() => {
         api.getRecipe(id)
@@ -96,6 +97,43 @@ export function RecipeDetail({ id, onBack, onEdit, onDelete }: { id: string, onB
                     <button onClick={handleDelete} className="px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded">Delete</button>
                 </div>
             </div>
+
+            {recipe.images && recipe.images.length > 0 && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    {recipe.images.map((key) => (
+                        <div key={key} className="aspect-square relative overflow-hidden rounded-xl border group cursor-pointer">
+                            <img
+                                src={`/api/images/${key}`}
+                                alt={recipe.name}
+                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                onClick={() => setSelectedImage(key)}
+                            />
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {/* Image Modal */}
+            {selectedImage && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 transition-opacity"
+                    onClick={() => setSelectedImage(null)}
+                >
+                    <div className="relative max-w-4xl w-full h-full flex items-center justify-center">
+                        <img
+                            src={`/api/images/${selectedImage}`}
+                            alt="Enlarged"
+                            className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+                        />
+                        <button
+                            className="absolute top-0 right-0 m-4 text-white text-3xl font-bold bg-black/20 rounded-full w-10 h-10 flex items-center justify-center hover:bg-black/40"
+                            onClick={(e) => { e.stopPropagation(); setSelectedImage(null); }}
+                        >
+                            ×
+                        </button>
+                    </div>
+                </div>
+            )}
 
             <div className="flex space-x-6 text-sm text-gray-600 bg-gray-50 p-4 rounded-lg">
                 {recipe.prepTime && <div><strong>Prep Time:</strong> {recipe.prepTime}</div>}

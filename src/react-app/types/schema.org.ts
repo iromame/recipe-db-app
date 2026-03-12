@@ -23,5 +23,6 @@ export interface Recipe {
     recipeIngredient?: RecipeIngredient[];
     recipeInstructions?: HowToStep[];
     url?: string;
+    images?: string[];
     structuredData?: any;
 }

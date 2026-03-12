@@ -11,6 +11,7 @@ export const recipes = sqliteTable("recipes", {
     recipeIngredient: text("recipe_ingredient", { mode: "json" }), // JSON array of ingredients
     recipeInstructions: text("recipe_instructions", { mode: "json" }), // JSON array or Markdown string of steps
     url: text("url"), // Reference URL
+    images: text("images", { mode: "json" }), // JSON array of image keys (R2 keys)
     structuredData: text("structured_data", { mode: "json" }), // Full Schema.org JSON-LD (optional)
     createdAt: integer("created_at", { mode: "timestamp" })
         .notNull()

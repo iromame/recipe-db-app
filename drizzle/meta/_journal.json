@@ -15,6 +15,13 @@
       "when": 1773280515454,
       "tag": "0001_heavy_madame_hydra",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1773281083616,
+      "tag": "0002_warm_sabretooth",
+      "breakpoints": true
     }
   ]
 }

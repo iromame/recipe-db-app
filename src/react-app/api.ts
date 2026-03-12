@@ -59,4 +59,13 @@ export const api = {
         });
         await checkResponse(res);
     },
+    uploadImage: async (recipeId: string, file: File): Promise<{ key: string }> => {
+        const formData = new FormData();
+        formData.append("file", file);
+        const res = await fetch(`/api/recipes/${recipeId}/images`, {
+            method: "POST",
+            body: formData,
+        });
+        return checkResponse(res);
+    },
 };

@@ -3,10 +3,85 @@ import { api } from "../api";
 import { Recipe, RecipeIngredient, HowToStep } from "../types/schema.org";
 
 export function RecipeForm({ id, onSave, onCancel }: { id?: string, onSave: (recipe: Recipe) => void, onCancel: () => void }) {
-    const [recipe, setRecipe] = useState<Partial<Recipe>>({ name: "", recipeCategory: "", prepTime: "", cookTime: "", url: "" });
+    const [recipe, setRecipe] = useState<Partial<Recipe>>({ name: "", recipeCategory: "", prepTime: "", cookTime: "", url: "", images: [] });
     const [ingredientsText, setIngredientsText] = useState("");
     const [instructionsText, setInstructionsText] = useState("");
     const [loading, setLoading] = useState(false);
+    const [uploading, setUploading] = useState(false);
+
+    const resizeImage = (file: File): Promise<Blob> => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (event) => {
+                const img = new Image();
+                img.src = event.target?.result as string;
+                img.onload = () => {
+                    const canvas = document.createElement("canvas");
+                    const MAX_WIDTH = 1200;
+                    const MAX_HEIGHT = 1200;
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > height) {
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
+                    } else {
+                        if (height > MAX_HEIGHT) {
+                            width *= MAX_HEIGHT / height;
+                            height = MAX_HEIGHT;
+                        }
+                    }
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext("2d");
+                    ctx?.drawImage(img, 0, 0, width, height);
+                    canvas.toBlob((blob) => {
+                        if (blob) resolve(blob);
+                        else reject(new Error("Canvas toBlob failed"));
+                    }, "image/webp", 0.8);
+                };
+            };
+            reader.onerror = (e) => reject(e);
+        });
+    };
+
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
+        if (!id) {
+            alert("Please save the recipe basics first before adding images (or we can implement staging).");
+            return;
+        }
+
+        const currentImages = recipe.images || [];
+        if (currentImages.length >= 3) {
+            alert("Maximum 3 images allowed.");
+            return;
+        }
+
+        setUploading(true);
+        try {
+            for (let i = 0; i < files.length; i++) {
+                if (currentImages.length + i >= 3) break;
+                const resizedBlob = await resizeImage(files[i]);
+                const resizedFile = new File([resizedBlob], files[i].name, { type: "image/webp" });
+                const { key } = await api.uploadImage(id, resizedFile);
+                setRecipe(prev => ({ ...prev, images: [...(prev.images || []), key] }));
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Failed to upload image.");
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    const removeImage = (key: string) => {
+        setRecipe(prev => ({ ...prev, images: (prev.images || []).filter(k => k !== key) }));
+    };
 
     useEffect(() => {
         if (id) {
@@ -29,6 +104,12 @@ export function RecipeForm({ id, onSave, onCancel }: { id?: string, onSave: (rec
                         if (Array.isArray(insts)) {
                             setInstructionsText(insts.map((s: any) => s.text).join("\n\n"));
                         }
+                    } catch (e) { console.error(e); }
+                }
+                if (r.images) {
+                    try {
+                        const parsed = typeof r.images === "string" ? JSON.parse(r.images) : r.images;
+                        setRecipe(prev => ({ ...prev, images: Array.isArray(parsed) ? parsed : [] }));
                     } catch (e) { console.error(e); }
                 }
             }).finally(() => setLoading(false));
@@ -124,6 +205,33 @@ export function RecipeForm({ id, onSave, onCancel }: { id?: string, onSave: (rec
                         onChange={e => setRecipe({ ...recipe, url: e.target.value })}
                         className="w-full p-2 border rounded-md"
                     />
+                </div>
+
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Photos (Max 3)</label>
+                    {!id && <p className="text-xs text-amber-600 mb-2">Save the recipe name first to enable image uploads.</p>}
+                    <div className="flex flex-wrap gap-2 mb-2">
+                        {recipe.images?.map(key => (
+                            <div key={key} className="relative group w-24 h-24">
+                                <img src={`/api/images/${key}`} alt="" className="w-full h-full object-cover rounded-md border" />
+                                <button
+                                    type="button"
+                                    onClick={() => removeImage(key)}
+                                    className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                    ×
+                                </button>
+                            </div>
+                        ))}
+                        {id && (recipe.images?.length || 0) < 3 && (
+                            <label className="w-24 h-24 border-2 border-dashed border-gray-300 rounded-md flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-colors">
+                                <span className="text-2xl text-gray-400">+</span>
+                                <span className="text-[10px] text-gray-400">Add Photo</span>
+                                <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={uploading} />
+                            </label>
+                        )}
+                    </div>
+                    {uploading && <div className="text-xs text-blue-600 animate-pulse">Resizing and uploading...</div>}
                 </div>
 
                 <div>
