@@ -1,12 +1,17 @@
 import { useEffect, useState } from "react";
 import { api } from "../api";
 import { Recipe } from "../types/schema.org";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { ChevronLeft, Edit, Trash2, Sun, ExternalLink, Clock, Utensils, Tag } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export function RecipeDetail({ id, onBack, onEdit, onDelete }: { id: string, onBack: () => void, onEdit: (id: string) => void, onDelete: (id: string) => void }) {
     const [recipe, setRecipe] = useState<Recipe | null>(null);
     const [loading, setLoading] = useState(true);
     const [wakeLockEnabled, setWakeLockEnabled] = useState(false);
-    const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
     // Wake Lock to prevent screen dimming during cooking
     useEffect(() => {
@@ -63,149 +68,182 @@ export function RecipeDetail({ id, onBack, onEdit, onDelete }: { id: string, onB
         }
     };
 
-    let ingredients = null;
-    try {
-        if (typeof recipe?.recipeIngredient === "string") {
-            const parsed = JSON.parse(recipe.recipeIngredient);
-            ingredients = typeof parsed === "string" ? JSON.parse(parsed) : parsed;
-        } else {
-            ingredients = recipe?.recipeIngredient;
+    const parseJson = (val: any) => {
+        try {
+            if (typeof val === "string") {
+                const parsed = JSON.parse(val);
+                return typeof parsed === "string" ? JSON.parse(parsed) : parsed;
+            }
+            return val;
+        } catch (e) {
+            console.error("Failed to parse JSON", e);
+            return null;
         }
-    } catch (e) {
-        console.error("Failed to parse ingredients", e);
-    }
+    };
 
-    let instructions = null;
-    try {
-        if (typeof recipe?.recipeInstructions === "string") {
-            const parsed = JSON.parse(recipe.recipeInstructions);
-            instructions = typeof parsed === "string" ? JSON.parse(parsed) : parsed;
-        } else {
-            instructions = recipe?.recipeInstructions;
-        }
-    } catch (e) {
-        console.error("Failed to parse instructions", e);
-    }
+    const ingredients = parseJson(recipe?.recipeIngredient);
+    const instructions = parseJson(recipe?.recipeInstructions);
 
-    if (loading) return <div className="p-8 text-center text-gray-400">Loading recipe...</div>;
-    if (!recipe) return <div className="p-8 text-center text-gray-400">Recipe not found.</div>;
+    if (loading) return <div className="p-12 text-center animate-pulse text-muted-foreground">Loading recipe details...</div>;
+    if (!recipe) return <div className="p-12 text-center text-destructive font-bold">Recipe not found.</div>;
+
+    const parseISOToMinutes = (iso: string) => {
+        const match = iso?.match(/PT(\d+)M/);
+        return match ? parseInt(match[1]) : 0;
+    };
+
+    const prepMin = parseISOToMinutes(recipe.prepTime || "");
+    const cookMin = parseISOToMinutes(recipe.cookTime || "");
 
     return (
-        <div className="bg-white min-h-screen pb-12">
-            <div className="p-4 flex items-center justify-between border-b sticky top-0 bg-white/90 backdrop-blur-md z-10">
-                <button onClick={onBack} className="text-gray-500 flex items-center gap-1 text-sm font-medium">
-                    <span className="text-xl">&larr;</span> 戻る
-                </button>
-                <div className="flex gap-2">
-                    <button onClick={() => onEdit(id)} className="p-2 text-gray-400 hover:text-blue-600 transition-colors">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                    </button>
-                    <button onClick={handleDelete} className="p-2 text-gray-400 hover:text-red-600 transition-colors">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                    </button>
+        <div className="bg-background min-h-screen pb-24">
+            <div className="bg-background/80 backdrop-blur-lg border-b sticky top-0 z-30">
+                <div className="max-w-3xl mx-auto px-4 h-16 flex justify-between items-center">
+                    <Button variant="ghost" size="sm" onClick={onBack} className="gap-2 rounded-full -ml-2">
+                        <ChevronLeft className="w-4 h-4" />
+                        <span>戻る</span>
+                    </Button>
+                    <div className="flex gap-2">
+                        <Button variant="ghost" size="icon" onClick={() => onEdit(id)} className="rounded-full text-muted-foreground hover:text-primary transition-colors">
+                            <Edit className="w-5 h-5" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={handleDelete} className="rounded-full text-muted-foreground hover:text-destructive transition-colors">
+                            <Trash2 className="w-5 h-5" />
+                        </Button>
+                    </div>
                 </div>
             </div>
 
-            <div className="p-6 space-y-8">
-                <div className="flex justify-between items-start">
+            <div className="max-w-3xl mx-auto px-4 py-8 space-y-10">
+                {/* Header Section */}
+                <div className="space-y-6">
                     <div className="space-y-2">
-                        <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">{recipe.name}</h2>
-                        <div className="flex flex-wrap gap-2">
-                            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest ${recipe.cookingMode === 'MAKE_AHEAD' ? 'bg-purple-100 text-purple-700' :
-                                recipe.cookingMode === 'LUNCH' ? 'bg-orange-100 text-orange-700' :
-                                    'bg-blue-100 text-blue-700'
-                                }`}>
-                                {recipe.cookingMode?.replace('_', ' ')}
-                            </span>
+                        <div className="flex flex-wrap items-center gap-3 mb-2">
+                            <Badge variant="outline" className={cn(
+                                "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border-2",
+                                recipe.cookingMode === 'MAKE_AHEAD' ? 'text-purple-600 border-purple-100 bg-purple-50/50' :
+                                    recipe.cookingMode === 'LUNCH' ? 'text-orange-600 border-orange-100 bg-orange-50/50' :
+                                        'text-blue-600 border-blue-100 bg-blue-50/50'
+                            )}>
+                                {recipe.cookingMode?.replace('_', ' ') || 'DINNER'}
+                            </Badge>
                             {recipe.tags?.map(t => (
-                                <span key={t} className="px-2.5 py-0.5 bg-gray-100 text-gray-500 rounded-full text-[10px] font-bold">
+                                <Badge key={t} variant="secondary" className="px-3 py-1 bg-secondary/50 text-muted-foreground rounded-full text-[10px] font-semibold">
                                     #{t}
-                                </span>
+                                </Badge>
                             ))}
-                            {wakeLockEnabled && (
-                                <span className="px-2.5 py-0.5 bg-yellow-50 text-yellow-600 rounded-full text-[10px] font-black uppercase tracking-widest animate-pulse flex items-center gap-1">
-                                    <span className="w-1.5 h-1.5 bg-yellow-400 rounded-full"></span> 料理中スリープ防止 ON
-                                </span>
-                            )}
                         </div>
+                        <h1 className="text-4xl font-extrabold tracking-tight text-foreground lg:text-5xl">{recipe.name}</h1>
                     </div>
+
+                    {wakeLockEnabled && (
+                        <Badge className="bg-amber-100 hover:bg-amber-100/80 text-amber-700 px-4 py-2 rounded-2xl border-amber-200 gap-2 border shadow-sm animate-in fade-in slide-in-from-top-2">
+                            <Sun className="w-4 h-4 fill-amber-500 text-amber-500 animate-spin-slow" />
+                            <span className="text-xs font-black uppercase tracking-widest">料理中スリープ防止 ON</span>
+                        </Badge>
+                    )}
                 </div>
 
+                {/* Images Section */}
                 {recipe.images && recipe.images.length > 0 && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                         {recipe.images.map((key) => (
-                            <div key={key} className="aspect-square relative overflow-hidden rounded-xl border group cursor-pointer">
-                                <img
-                                    src={`/api/images/${key}`}
-                                    alt={recipe.name}
-                                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                                    onClick={() => setSelectedImage(key)}
-                                />
-                            </div>
+                            <Dialog key={key}>
+                                <DialogTrigger asChild>
+                                    <div className="aspect-[4/3] relative overflow-hidden rounded-3xl border bg-muted shadow-sm group cursor-pointer active:scale-95 transition-all">
+                                        <img
+                                            src={`/api/images/${key}`}
+                                            alt={recipe.name}
+                                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                        />
+                                        <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    </div>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-4xl p-1 bg-black/10 backdrop-blur-xl border-none shadow-none">
+                                    <img
+                                        src={`/api/images/${key}`}
+                                        alt={recipe.name}
+                                        className="w-full h-auto max-h-[90vh] object-contain rounded-2xl"
+                                    />
+                                </DialogContent>
+                            </Dialog>
                         ))}
                     </div>
                 )}
 
-                {/* Image Modal */}
-                {selectedImage && (
-                    <div
-                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 transition-opacity"
-                        onClick={() => setSelectedImage(null)}
-                    >
-                        <div className="relative max-w-4xl w-full h-full flex items-center justify-center">
-                            <img
-                                src={`/api/images/${selectedImage}`}
-                                alt="Enlarged"
-                                className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
-                            />
-                            <button
-                                className="absolute top-0 right-0 m-4 text-white text-3xl font-bold bg-black/20 rounded-full w-10 h-10 flex items-center justify-center hover:bg-black/40"
-                                onClick={(e) => { e.stopPropagation(); setSelectedImage(null); }}
-                            >
-                                ×
-                            </button>
+                {/* Meta Info */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-6 bg-muted/30 rounded-[2rem] border border-muted-foreground/5 items-center">
+                    <div className="space-y-1">
+                        <div className="flex items-center gap-1.5 text-muted-foreground">
+                            <Clock className="w-3.5 h-3.5" />
+                            <span className="text-[10px] font-bold uppercase tracking-wider">Prep</span>
                         </div>
+                        <p className="text-sm font-semibold">{prepMin > 0 ? `${prepMin} min` : "--"}</p>
                     </div>
-                )}
-
-                <div className="flex space-x-6 text-sm text-gray-600 bg-gray-50 p-4 rounded-lg">
-                    {recipe.prepTime && <div><strong>Prep Time:</strong> {recipe.prepTime}</div>}
-                    {recipe.cookTime && <div><strong>Cook Time:</strong> {recipe.cookTime}</div>}
-                    {recipe.suitableForKids && <div><strong>Kid-Friendly:</strong> {recipe.suitableForKids.name}</div>}
+                    <div className="space-y-1 border-l pl-4 border-muted">
+                        <div className="flex items-center gap-1.5 text-muted-foreground">
+                            <Clock className="w-3.5 h-3.5" />
+                            <span className="text-[10px] font-bold uppercase tracking-wider">Cook</span>
+                        </div>
+                        <p className="text-sm font-semibold">{cookMin > 0 ? `${cookMin} min` : "--"}</p>
+                    </div>
                     {recipe.url && (
-                        <div className="flex-1 text-right">
-                            <strong>Source:</strong> <a href={recipe.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline break-all">{recipe.url}</a>
+                        <div className="col-span-2 space-y-1 border-l sm:pl-4 border-muted">
+                            <div className="flex items-center gap-1.5 text-muted-foreground">
+                                <ExternalLink className="w-3.5 h-3.5" />
+                                <span className="text-[10px] font-bold uppercase tracking-wider">Source</span>
+                            </div>
+                            <a href={recipe.url} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-primary hover:underline truncate block max-w-full">
+                                {new URL(recipe.url).hostname}
+                            </a>
                         </div>
                     )}
                 </div>
 
-                {ingredients && ingredients.length > 0 && (
-                    <div>
-                        <h3 className="text-xl font-semibold mb-3 border-b pb-2">Ingredients</h3>
-                        <ul className="list-disc pl-5 space-y-1">
-                            {ingredients.map((ing: any, idx: number) => (
-                                <li key={idx}>
-                                    {ing.amount && <span className="font-medium mr-1">{ing.amount}</span>}
-                                    {ing.unit && <span className="font-medium mr-1">{ing.unit}</span>}
-                                    {ing.name}
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                )}
+                {/* Content Section */}
+                <div className="grid grid-cols-1 lg:grid-cols-5 gap-10">
+                    {/* Ingredients */}
+                    <Card className="lg:col-span-2 rounded-[2rem] border-muted bg-card shadow-sm">
+                        <CardHeader className="pb-4">
+                            <CardTitle className="flex items-center gap-2 text-lg font-bold">
+                                <Utensils className="w-5 h-5 text-primary" />
+                                <span>材料</span>
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <ul className="space-y-3">
+                                {ingredients?.map((ing: any, idx: number) => (
+                                    <li key={idx} className="flex justify-between items-baseline border-b border-dashed border-muted pb-2 last:border-0 last:pb-0">
+                                        <span className="text-sm font-medium">{ing.name}</span>
+                                        <span className="text-sm text-muted-foreground font-semibold">
+                                            {ing.amount} {ing.unit}
+                                        </span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </CardContent>
+                    </Card>
 
-                {instructions && instructions.length > 0 && (
-                    <div>
-                        <h3 className="text-xl font-semibold mb-3 border-b pb-2">Instructions</h3>
-                        <ol className="list-decimal pl-5 space-y-3">
-                            {instructions.map((step: any, idx: number) => (
-                                <li key={idx} className="pl-2">
-                                    {step.text}
-                                </li>
+                    {/* Instructions */}
+                    <div className="lg:col-span-3 space-y-6">
+                        <div className="flex items-center gap-2 mb-4">
+                            <Tag className="w-5 h-5 text-primary" />
+                            <h3 className="text-xl font-bold">作り方</h3>
+                        </div>
+                        <div className="space-y-8">
+                            {instructions?.map((step: any, idx: number) => (
+                                <div key={idx} className="relative pl-12 group">
+                                    <span className="absolute left-0 top-0 w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-black text-sm group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300">
+                                        {idx + 1}
+                                    </span>
+                                    <p className="text-base text-muted-foreground leading-relaxed pt-1">
+                                        {step.text}
+                                    </p>
+                                </div>
                             ))}
-                        </ol>
+                        </div>
                     </div>
-                )}
+                </div>
             </div>
         </div>
     );

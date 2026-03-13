@@ -1,6 +1,13 @@
 import { useState, useEffect } from "react";
 import { api } from "../api";
 import { Recipe } from "../types/schema.org";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Plus, X, Clock, Utensils, Tag, ImageIcon, Link as LinkIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export function RecipeForm({ id, onSave, onCancel }: { id?: string, onSave: (recipe: Recipe) => void, onCancel: () => void }) {
     const [recipe, setRecipe] = useState<Partial<Recipe>>({
@@ -152,112 +159,124 @@ export function RecipeForm({ id, onSave, onCancel }: { id?: string, onSave: (rec
 
     const TimePicker = ({ label, value, onChange }: { label: string, value: string, onChange: (val: string) => void }) => {
         const minutes = parseISOToMinutes(value);
-        const options = [5, 10, 15, 20, 30, 45, 60, 90, 120];
+        const options = [0, 5, 10, 15, 20, 30, 45, 60, 90, 120];
 
         return (
             <div className="space-y-3">
-                <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest">{label}</label>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-muted-foreground" />
+                    <label className="text-sm font-semibold tracking-tight">{label}</label>
+                </div>
+                <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 touch-pan-x no-scrollbar scroll-smooth snap-x">
                     {options.map(m => (
                         <button
                             key={m}
                             type="button"
                             onClick={() => onChange(formatMinutesToISO(m))}
-                            className={`px-3 py-2 rounded-lg text-sm font-medium border transition-all ${minutes === m
-                                ? "bg-blue-600 text-white border-blue-600 shadow-sm"
-                                : "bg-white text-gray-600 border-gray-200 hover:border-blue-300"
-                                }`}
+                            className={cn(
+                                "flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium border transition-all snap-start",
+                                minutes === m
+                                    ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                                    : "bg-background text-muted-foreground border-input hover:border-primary/50"
+                            )}
                         >
-                            {m >= 60 ? `${Math.floor(m / 60)}h${m % 60 || ""}` : `${m}分`}
+                            {m === 0 ? "未設定" : m >= 60 ? `${Math.floor(m / 60)}h${m % 60 || ""}` : `${m}分`}
                         </button>
                     ))}
-                    <button
+                    <Button
                         type="button"
-                        onClick={() => {
+                        variant="outline"
+                        size="sm"
+                        className="flex-shrink-0 rounded-full h-9"
+                        onClick={(e) => {
+                            e.preventDefault();
                             const custom = prompt("分を入力してください", minutes.toString());
-                            if (custom) onChange(formatMinutesToISO(parseInt(custom)));
+                            if (custom && !isNaN(parseInt(custom))) onChange(formatMinutesToISO(parseInt(custom)));
                         }}
-                        className="px-3 py-2 rounded-lg text-sm font-medium border bg-gray-50 text-gray-400 border-gray-200"
                     >
                         カスタム
-                    </button>
+                    </Button>
                 </div>
-                {minutes > 0 && <p className="text-[10px] text-blue-500 font-bold">選択中: {minutes}分</p>}
             </div>
         );
     };
 
-    if (loading) return <div className="p-8 text-center text-gray-400">Loading recipe data...</div>;
+    if (loading) return <div className="p-12 text-center animate-pulse text-muted-foreground">Loading recipe data...</div>;
 
     return (
-        <div className="bg-gray-50 min-h-screen pb-24">
-            <div className="bg-white p-6 shadow-sm sticky top-0 z-10">
-                <div className="max-w-xl mx-auto flex justify-between items-center">
-                    <h2 className="text-xl font-bold text-gray-800">{id ? "Edit Recipe" : "New Recipe"}</h2>
-                    <button onClick={onCancel} className="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+        <div className="bg-background min-h-screen pb-32">
+            <div className="bg-background/80 backdrop-blur-md border-b sticky top-0 z-30">
+                <div className="max-w-xl mx-auto px-4 h-16 flex justify-between items-center">
+                    <h2 className="text-lg font-bold tracking-tight">{id ? "Edit Recipe" : "New Recipe"}</h2>
+                    <Button type="button" variant="ghost" size="icon" onClick={onCancel} className="rounded-full">
+                        <X className="w-5 h-5" />
+                    </Button>
                 </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="max-w-xl mx-auto p-4 space-y-8">
+            <form onSubmit={handleSubmit} className="max-w-xl mx-auto p-4 space-y-10">
                 {/* 1. Cooking Mode */}
-                <section>
-                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Cooking Mode</label>
-                    <div className="flex p-1 bg-gray-100 rounded-xl">
-                        {(["MAKE_AHEAD", "LUNCH", "DINNER"] as const).map(mode => (
-                            <button
-                                key={mode}
-                                type="button"
-                                onClick={() => setRecipe({ ...recipe, cookingMode: mode })}
-                                className={`flex-1 py-3 text-sm font-bold rounded-lg transition-all ${recipe.cookingMode === mode
-                                    ? "bg-white text-blue-600 shadow-sm"
-                                    : "text-gray-500 hover:text-gray-700"
-                                    }`}
-                            >
-                                {mode === "MAKE_AHEAD" ? "作り置き" : mode === "LUNCH" ? "お昼" : "晩ごはん"}
-                            </button>
-                        ))}
+                <section className="space-y-4">
+                    <div className="flex items-center gap-2">
+                        <Utensils className="w-4 h-4 text-muted-foreground" />
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Cooking Mode</label>
                     </div>
+                    <Tabs
+                        value={recipe.cookingMode || "DINNER"}
+                        onValueChange={(val) => setRecipe({ ...recipe, cookingMode: val as any })}
+                        className="w-full"
+                    >
+                        <TabsList className="grid w-full grid-cols-3 h-12 p-1 bg-muted/50 rounded-xl">
+                            <TabsTrigger value="MAKE_AHEAD" className="rounded-lg font-bold text-xs">作り置き</TabsTrigger>
+                            <TabsTrigger value="LUNCH" className="rounded-lg font-bold text-xs">お昼</TabsTrigger>
+                            <TabsTrigger value="DINNER" className="rounded-lg font-bold text-xs">晩ごはん</TabsTrigger>
+                        </TabsList>
+                    </Tabs>
                 </section>
 
-                {/* 2. Basic Info & Tags */}
+                {/* 2. Basic Info */}
                 <section className="space-y-6">
-                    <div>
-                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Recipe Name *</label>
-                        <input
-                            type="text" required
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Recipe Name *</label>
+                        <Input
                             placeholder="e.g. 肉じゃが"
                             value={recipe.name || ""}
                             onChange={e => setRecipe({ ...recipe, name: e.target.value })}
-                            className="w-full p-4 bg-white border-0 border-b-2 border-gray-100 focus:border-blue-500 text-lg transition-colors outline-none"
+                            className="h-14 text-xl font-medium border-0 border-b-2 rounded-none bg-transparent focus-visible:ring-0 focus-visible:border-primary px-0 transition-all"
+                            required
                         />
                     </div>
 
-                    <div>
-                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Tags</label>
-                        <div className="flex flex-wrap gap-2 mb-3">
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-2">
+                            <Tag className="w-4 h-4 text-muted-foreground" />
+                            <label className="text-sm font-semibold tracking-tight">Tags</label>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
                             {recipe.tags?.map(tag => (
-                                <span key={tag} className="flex items-center bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm font-medium">
+                                <Badge key={tag} variant="secondary" className="pl-3 pr-1 py-1 rounded-full text-xs font-medium bg-secondary/50 hover:bg-secondary">
                                     #{tag}
-                                    <button type="button" onClick={() => removeTag(tag)} className="ml-2 text-blue-300 hover:text-blue-500">&times;</button>
-                                </span>
+                                    <button type="button" onClick={() => removeTag(tag)} className="ml-1 p-0.5 hover:bg-muted rounded-full transition-colors">
+                                        <X className="w-3 h-3" />
+                                    </button>
+                                </Badge>
                             ))}
                         </div>
                         <div className="flex gap-2">
-                            <input
-                                type="text"
+                            <Input
                                 placeholder="Add tag (e.g. レンジ, 時短)"
                                 value={tagInput}
                                 onChange={e => setTagInput(e.target.value)}
                                 onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addTag())}
-                                className="flex-1 p-3 bg-white border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-100"
+                                className="h-11 rounded-xl bg-muted/30 border-muted"
                             />
-                            <button type="button" onClick={addTag} className="bg-gray-100 px-4 py-3 rounded-lg text-sm font-bold text-gray-600">Add</button>
+                            <Button type="button" variant="secondary" onClick={addTag} className="rounded-xl h-11 px-6 font-bold">Add</Button>
                         </div>
                     </div>
                 </section>
 
                 {/* 3. Time Pickers */}
-                <section className="grid grid-cols-1 gap-6">
+                <section className="grid grid-cols-1 gap-8 pt-4">
                     <TimePicker
                         label="Prep Time (準備時間)"
                         value={recipe.prepTime || ""}
@@ -271,82 +290,90 @@ export function RecipeForm({ id, onSave, onCancel }: { id?: string, onSave: (rec
                 </section>
 
                 {/* 4. Ingredients & Instructions */}
-                <section className="space-y-6">
-                    <div>
-                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Ingredients</label>
-                        <textarea
+                <section className="space-y-8 pt-4">
+                    <div className="space-y-3">
+                        <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Ingredients</label>
+                        <Textarea
                             rows={5}
                             value={ingredientsText}
                             onChange={e => setIngredientsText(e.target.value)}
-                            className="w-full p-4 bg-white border rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-100"
+                            className="rounded-2xl p-4 bg-muted/20 border-muted focus-visible:ring-offset-0 focus-visible:ring-primary/20"
                             placeholder="豚肉 200g&#10;玉ねぎ 1個"
                         />
                     </div>
-                    <div>
-                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Instructions</label>
-                        <textarea
+                    <div className="space-y-3">
+                        <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Instructions</label>
+                        <Textarea
                             rows={8}
                             value={instructionsText}
                             onChange={e => setInstructionsText(e.target.value)}
-                            className="w-full p-4 bg-white border rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-100"
+                            className="rounded-2xl p-4 bg-muted/20 border-muted focus-visible:ring-offset-0 focus-visible:ring-primary/20"
                             placeholder="1. 野菜を切る&#10;&#10;2. 炒める"
                         />
                     </div>
                 </section>
 
                 {/* 5. Photos */}
-                <section>
-                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Photos (Max 3)</label>
-                    <div className="flex flex-wrap gap-3">
+                <section className="space-y-4 pt-4">
+                    <div className="flex items-center gap-2">
+                        <ImageIcon className="w-4 h-4 text-muted-foreground" />
+                        <label className="text-sm font-semibold tracking-tight">Photos (Max 3)</label>
+                    </div>
+                    <div className="flex flex-wrap gap-4">
                         {recipe.images?.map(key => (
-                            <div key={key} className="relative w-24 h-24 rounded-xl overflow-hidden shadow-sm border bg-white">
+                            <div key={key} className="relative w-28 h-28 rounded-2xl overflow-hidden shadow-sm border bg-muted">
                                 <img src={`/api/images/${key}`} alt="" className="w-full h-full object-cover" />
                                 <button
                                     type="button"
                                     onClick={() => removeImage(key)}
-                                    className="absolute inset-0 bg-black/40 flex items-center justify-center text-white text-xl opacity-0 hover:opacity-100 transition-opacity"
+                                    className="absolute top-1 right-1 bg-black/50 text-white rounded-full p-1 opacity-0 hover:opacity-100 transition-opacity"
                                 >
-                                    &times;
+                                    <X className="w-4 h-4" />
                                 </button>
                             </div>
                         ))}
                         {id && (recipe.images?.length || 0) < 3 && (
-                            <label className="w-24 h-24 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:bg-white transition-colors">
-                                <span className="text-2xl text-gray-300 font-light">+</span>
+                            <label className="w-28 h-28 border-2 border-dashed border-muted rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-muted/30 transition-all group">
+                                <Plus className="w-6 h-6 text-muted-foreground group-hover:text-primary transition-colors" />
+                                <span className="text-[10px] text-muted-foreground mt-1 font-bold">追加</span>
                                 <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={uploading} />
                             </label>
                         )}
                     </div>
-                    {uploading && <div className="text-[10px] text-blue-500 mt-2 font-bold animate-pulse uppercase tracking-wider">Uploading...</div>}
+                    {uploading && <div className="text-[10px] text-primary mt-2 font-bold animate-pulse uppercase tracking-widest">Uploading...</div>}
                 </section>
 
                 {/* 6. URL */}
-                <section>
-                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Source URL</label>
-                    <input
+                <section className="space-y-3 pt-4">
+                    <div className="flex items-center gap-2">
+                        <LinkIcon className="w-4 h-4 text-muted-foreground" />
+                        <label className="text-sm font-semibold tracking-tight">Source URL</label>
+                    </div>
+                    <Input
                         type="url" placeholder="https://..."
                         value={recipe.url || ""}
                         onChange={e => setRecipe({ ...recipe, url: e.target.value })}
-                        className="w-full p-3 bg-white border rounded-lg text-sm text-gray-500 italic"
+                        className="rounded-xl bg-muted/30 border-muted italic text-muted-foreground"
                     />
                 </section>
 
                 {/* Fixed Bottom Action Bar */}
-                <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/95 backdrop-blur-sm border-t shadow-lg z-20">
-                    <div className="max-w-xl mx-auto flex gap-3">
-                        <button
+                <div className="fixed bottom-0 left-0 right-0 p-6 bg-background/90 backdrop-blur-lg border-t shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.1)] z-40">
+                    <div className="max-w-xl mx-auto flex gap-4">
+                        <Button
                             type="button"
+                            variant="outline"
                             onClick={onCancel}
-                            className="flex-1 py-4 text-sm font-bold text-gray-500 bg-gray-50 rounded-xl border border-gray-100"
+                            className="flex-1 h-14 rounded-2xl font-bold text-muted-foreground border-muted shadow-sm"
                         >
                             閉じる
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                             type="submit"
-                            className="flex-[2] py-4 text-sm font-bold text-white bg-blue-600 rounded-xl shadow-blue-200 shadow-lg hover:shadow-xl transition-all active:scale-95"
+                            className="flex-[2] h-14 rounded-2xl font-bold text-lg shadow-lg shadow-primary/20 hover:shadow-primary/30 active:scale-95 transition-all"
                         >
                             レシピを保存
-                        </button>
+                        </Button>
                     </div>
                 </div>
             </form>
