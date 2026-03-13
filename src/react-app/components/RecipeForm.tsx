@@ -19,7 +19,6 @@ export function RecipeForm({ id, onSave, onCancel }: { id?: string, onSave: (rec
     const [loading, setLoading] = useState(false);
     const [uploading, setUploading] = useState(false);
 
-    // ... (resizeImage and handleImageUpload remain the same) ...
     const resizeImage = (file: File): Promise<Blob> => {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -99,6 +98,12 @@ export function RecipeForm({ id, onSave, onCancel }: { id?: string, onSave: (rec
         setRecipe(prev => ({ ...prev, tags: (prev.tags || []).filter(t => t !== tag) }));
     };
 
+    const formatMinutesToISO = (minutes: number) => `PT${minutes}M`;
+    const parseISOToMinutes = (iso: string) => {
+        const match = iso?.match(/PT(\d+)M/);
+        return match ? parseInt(match[1]) : 0;
+    };
+
     useEffect(() => {
         if (id) {
             setLoading(true);
@@ -145,10 +150,47 @@ export function RecipeForm({ id, onSave, onCancel }: { id?: string, onSave: (rec
         onSave(finalRecipe);
     };
 
+    const TimePicker = ({ label, value, onChange }: { label: string, value: string, onChange: (val: string) => void }) => {
+        const minutes = parseISOToMinutes(value);
+        const options = [5, 10, 15, 20, 30, 45, 60, 90, 120];
+
+        return (
+            <div className="space-y-3">
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest">{label}</label>
+                <div className="flex flex-wrap gap-2">
+                    {options.map(m => (
+                        <button
+                            key={m}
+                            type="button"
+                            onClick={() => onChange(formatMinutesToISO(m))}
+                            className={`px-3 py-2 rounded-lg text-sm font-medium border transition-all ${minutes === m
+                                ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                                : "bg-white text-gray-600 border-gray-200 hover:border-blue-300"
+                                }`}
+                        >
+                            {m >= 60 ? `${Math.floor(m / 60)}h${m % 60 || ""}` : `${m}分`}
+                        </button>
+                    ))}
+                    <button
+                        type="button"
+                        onClick={() => {
+                            const custom = prompt("分を入力してください", minutes.toString());
+                            if (custom) onChange(formatMinutesToISO(parseInt(custom)));
+                        }}
+                        className="px-3 py-2 rounded-lg text-sm font-medium border bg-gray-50 text-gray-400 border-gray-200"
+                    >
+                        カスタム
+                    </button>
+                </div>
+                {minutes > 0 && <p className="text-[10px] text-blue-500 font-bold">選択中: {minutes}分</p>}
+            </div>
+        );
+    };
+
     if (loading) return <div className="p-8 text-center text-gray-400">Loading recipe data...</div>;
 
     return (
-        <div className="bg-gray-50 min-h-screen pb-24"> {/* Extra padding for bottom buttons */}
+        <div className="bg-gray-50 min-h-screen pb-24">
             <div className="bg-white p-6 shadow-sm sticky top-0 z-10">
                 <div className="max-w-xl mx-auto flex justify-between items-center">
                     <h2 className="text-xl font-bold text-gray-800">{id ? "Edit Recipe" : "New Recipe"}</h2>
@@ -157,7 +199,7 @@ export function RecipeForm({ id, onSave, onCancel }: { id?: string, onSave: (rec
             </div>
 
             <form onSubmit={handleSubmit} className="max-w-xl mx-auto p-4 space-y-8">
-                {/* 1. Cooking Mode - Large buttons for thumbs */}
+                {/* 1. Cooking Mode */}
                 <section>
                     <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Cooking Mode</label>
                     <div className="flex p-1 bg-gray-100 rounded-xl">
@@ -177,8 +219,8 @@ export function RecipeForm({ id, onSave, onCancel }: { id?: string, onSave: (rec
                     </div>
                 </section>
 
-                {/* 2. Basic Info */}
-                <section className="space-y-4">
+                {/* 2. Basic Info & Tags */}
+                <section className="space-y-6">
                     <div>
                         <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Recipe Name *</label>
                         <input
@@ -215,25 +257,17 @@ export function RecipeForm({ id, onSave, onCancel }: { id?: string, onSave: (rec
                 </section>
 
                 {/* 3. Time Pickers */}
-                <section className="grid grid-cols-2 gap-4">
-                    <div>
-                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Prep Time</label>
-                        <input
-                            type="text" placeholder="PT15M"
-                            value={recipe.prepTime || ""}
-                            onChange={e => setRecipe({ ...recipe, prepTime: e.target.value })}
-                            className="w-full p-3 bg-white border rounded-lg text-sm"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Cook Time</label>
-                        <input
-                            type="text" placeholder="PT30M"
-                            value={recipe.cookTime || ""}
-                            onChange={e => setRecipe({ ...recipe, cookTime: e.target.value })}
-                            className="w-full p-3 bg-white border rounded-lg text-sm"
-                        />
-                    </div>
+                <section className="grid grid-cols-1 gap-6">
+                    <TimePicker
+                        label="Prep Time (準備時間)"
+                        value={recipe.prepTime || ""}
+                        onChange={val => setRecipe({ ...recipe, prepTime: val })}
+                    />
+                    <TimePicker
+                        label="Cook Time (調理時間)"
+                        value={recipe.cookTime || ""}
+                        onChange={val => setRecipe({ ...recipe, cookTime: val })}
+                    />
                 </section>
 
                 {/* 4. Ingredients & Instructions */}
@@ -297,7 +331,7 @@ export function RecipeForm({ id, onSave, onCancel }: { id?: string, onSave: (rec
                     />
                 </section>
 
-                {/* Fixed Bottom Action Bar for Thumb Access */}
+                {/* Fixed Bottom Action Bar */}
                 <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/95 backdrop-blur-sm border-t shadow-lg z-20">
                     <div className="max-w-xl mx-auto flex gap-3">
                         <button
