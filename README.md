@@ -37,10 +37,12 @@ npm run cf-typegen
 
 ## Production Deployment
 
-Deploy to your Cloudflare Workers subdomain:
+Latest code must be built before deployment to reflect changes (especially CSS/Frontend):
 ```bash
-npm run deploy
+npm run build && npm run deploy
 ```
+
+*(Note: `npm run deploy` alone only uploads files already in the `dist` directory. Use the combined command above for a safe deployment.)*
 
 *(Note: The first time you deploy to a new `.workers.dev` subdomain, it may take 3-5 minutes for the SSL certificate to be provisioned. If you see an SSL mismatch error, please wait a few minutes and refresh.)*
 
