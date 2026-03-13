@@ -121,9 +121,9 @@ export function RecipeDetail({ id, onBack, onEdit, onDelete }: { id: string, onB
                         <div className="flex flex-wrap items-center gap-3 mb-2">
                             <Badge variant="outline" className={cn(
                                 "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border-2",
-                                recipe.cookingMode === 'MAKE_AHEAD' ? 'text-purple-600 border-purple-100 bg-purple-50/50' :
-                                    recipe.cookingMode === 'LUNCH' ? 'text-orange-600 border-orange-100 bg-orange-50/50' :
-                                        'text-blue-600 border-blue-100 bg-blue-50/50'
+                                recipe.cookingMode === 'MAKE_AHEAD' ? 'border-primary/50 text-primary bg-primary/10' :
+                                    recipe.cookingMode === 'LUNCH' ? 'border-secondary/50 text-secondary-foreground bg-secondary/50' :
+                                        'border-accent/50 text-accent-foreground bg-accent/50'
                             )}>
                                 {recipe.cookingMode?.replace('_', ' ') || 'DINNER'}
                             </Badge>
@@ -137,8 +137,8 @@ export function RecipeDetail({ id, onBack, onEdit, onDelete }: { id: string, onB
                     </div>
 
                     {wakeLockEnabled && (
-                        <Badge className="bg-amber-100 hover:bg-amber-100/80 text-amber-700 px-4 py-2 rounded-2xl border-amber-200 gap-2 border shadow-sm animate-in fade-in slide-in-from-top-2">
-                            <Sun className="w-4 h-4 fill-amber-500 text-amber-500 animate-spin-slow" />
+                        <Badge className="bg-primary/10 hover:bg-primary/20 text-primary px-4 py-2 rounded-2xl border-primary/30 gap-2 border shadow-sm animate-in fade-in slide-in-from-top-2">
+                            <Sun className="w-4 h-4 fill-primary text-primary animate-spin-slow" />
                             <span className="text-xs font-black uppercase tracking-widest">料理中スリープ防止 ON</span>
                         </Badge>
                     )}
