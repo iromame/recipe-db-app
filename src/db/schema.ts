@@ -16,6 +16,9 @@ export const recipes = sqliteTable("recipes", {
     createdAt: integer("created_at", { mode: "timestamp" })
         .notNull()
         .default(new Date()),
+    updatedAt: integer("updated_at", { mode: "timestamp" })
+        .notNull()
+        .default(new Date()),
 });
 
 export const tags = sqliteTable("tags", {

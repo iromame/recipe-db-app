@@ -27,4 +27,6 @@ export interface Recipe {
     url?: string;
     images?: string[];
     structuredData?: any;
+    createdAt?: Date;
+    updatedAt?: Date;
 }

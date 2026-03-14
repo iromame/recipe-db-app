@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { drizzle } from "drizzle-orm/d1";
-import { eq, inArray } from "drizzle-orm";
+import { eq, inArray, desc } from "drizzle-orm";
 import { recipes, tags, recipeTags } from "../db/schema";
 
 const app = new Hono<{ Bindings: Env }>();
@@ -71,7 +71,7 @@ async function attachTags(db: any, recipeList: any[]) {
 
 app.get("/api/recipes", async (c) => {
     const db = drizzle(c.env.recipe_db);
-    const allRecipes = await db.select().from(recipes).all();
+    const allRecipes = await db.select().from(recipes).orderBy(desc(recipes.updatedAt)).all();
     const results = await attachTags(db, allRecipes);
     return c.json(results);
 });
@@ -106,6 +106,7 @@ app.post("/api/recipes", async (c) => {
         images: body.images || null,
         structuredData: body,
         createdAt: new Date(),
+        updatedAt: new Date(),
     };
 
     await db.insert(recipes).values(newRecipe).run();
@@ -133,6 +134,7 @@ app.put("/api/recipes/:id", async (c) => {
     if (body.url !== undefined) updateData.url = body.url;
     if (body.images !== undefined) updateData.images = body.images;
     if (body.structuredData !== undefined) updateData.structuredData = body.structuredData;
+    updateData.updatedAt = new Date();
 
     await db.update(recipes).set(updateData).where(eq(recipes.id, recipeId)).run();
 
@@ -212,8 +214,12 @@ app.post("/api/recipes/:id/images", async (c) => {
 
     const currentImages = recipe.images ? (typeof recipe.images === 'string' ? JSON.parse(recipe.images) : recipe.images) : [];
     const updatedImages = [...currentImages, key].slice(-3);
+    const now = new Date();
 
-    await db.update(recipes).set({ images: updatedImages }).where(eq(recipes.id, recipeId)).run();
+    await db.update(recipes).set({ 
+        images: updatedImages,
+        updatedAt: now
+    }).where(eq(recipes.id, recipeId)).run();
 
     return c.json({ key });
 });
