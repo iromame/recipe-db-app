@@ -6,8 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
-import { Download, Plus, AlertCircle, Clock, Search, Filter, X, Tag } from "lucide-react";
+import { Drawer, DrawerClose, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
+import { Download, Plus, AlertCircle, Clock, Search, Filter, X, Tag, Utensils } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function RecipeList({ onSelectRecipe, onCreateNew }: { onSelectRecipe: (id: string) => void, onCreateNew: () => void }) {
@@ -17,7 +17,7 @@ export function RecipeList({ onSelectRecipe, onCreateNew }: { onSelectRecipe: (i
 
     // Filters state
     const [searchQuery, setSearchQuery] = useState("");
-    const [selectedMode, setSelectedMode] = useState<string>("ALL");
+    const [selectedModes, setSelectedModes] = useState<string[]>([]);
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
     const [allTags, setAllTags] = useState<string[]>([]);
 
@@ -40,8 +40,10 @@ export function RecipeList({ onSelectRecipe, onCreateNew }: { onSelectRecipe: (i
 
     const filteredRecipes = useMemo(() => {
         return recipes.filter(r => {
-            // Mode filter
-            if (selectedMode !== "ALL" && r.cookingMode !== selectedMode) return false;
+            // Mode filter (OR condition for multiple selected modes)
+            if (selectedModes.length > 0) {
+                if (!r.cookingMode || !selectedModes.includes(r.cookingMode)) return false;
+            }
             
             // Tags filter (AND condition)
             if (selectedTags.length > 0) {
@@ -68,7 +70,7 @@ export function RecipeList({ onSelectRecipe, onCreateNew }: { onSelectRecipe: (i
             }
             return true;
         });
-    }, [recipes, searchQuery, selectedMode, selectedTags]);
+    }, [recipes, searchQuery, selectedModes, selectedTags]);
 
     const toggleTag = (tag: string) => {
         setSelectedTags(prev => 
@@ -147,28 +149,50 @@ export function RecipeList({ onSelectRecipe, onCreateNew }: { onSelectRecipe: (i
                                     variant="outline" 
                                     className={cn(
                                         "h-12 w-12 rounded-2xl flex-shrink-0 bg-card border-none shadow-sm relative",
-                                        selectedTags.length > 0 && "text-primary bg-primary/10"
+                                        (selectedTags.length > 0 || selectedModes.length > 0) && "text-primary bg-primary/10"
                                     )}
                                 >
                                     <Filter className="h-5 w-5" />
-                                    {selectedTags.length > 0 && (
-                                        <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-primary text-primary-foreground text-[10px] font-bold rounded-full flex items-center justify-center shadow-sm">
-                                            {selectedTags.length}
+                                    {(selectedTags.length > 0 || selectedModes.length > 0) && (
+                                        <span className="absolute -top-1.5 -right-1.5 min-w-[1.25rem] px-1 h-5 bg-primary text-primary-foreground text-[10px] font-bold rounded-full flex items-center justify-center shadow-sm">
+                                            {selectedTags.length + selectedModes.length}
                                         </span>
                                     )}
                                 </Button>
                             </DrawerTrigger>
                             <DrawerContent className="px-4">
                                 <div className="mx-auto w-full max-w-sm">
-                                    <DrawerHeader className="px-0">
+                                    <DrawerHeader className="px-0 pb-2">
                                         <DrawerTitle className="text-left flex items-center gap-2">
-                                            <Tag className="w-5 h-5 text-primary" /> Filter by Tags
+                                            <Utensils className="w-5 h-5 text-primary" /> Cooking Mode
                                         </DrawerTitle>
-                                        <DrawerDescription className="text-left">
-                                            Select multiple tags to narrow down results.
-                                        </DrawerDescription>
                                     </DrawerHeader>
-                                    <div className="py-4 flex flex-wrap gap-2">
+                                    <div className="pb-4 flex flex-wrap gap-2 border-b border-muted">
+                                        {['MAKE_AHEAD', 'LUNCH', 'DINNER'].map(mode => (
+                                            <Badge
+                                                key={mode}
+                                                variant="outline"
+                                                className={cn(
+                                                    "px-3 py-1.5 text-sm font-semibold cursor-pointer transition-all active:scale-95 border-none",
+                                                    selectedModes.includes(mode) 
+                                                        ? (mode === 'MAKE_AHEAD' ? "bg-primary/20 text-primary shadow-sm" : mode === 'LUNCH' ? "bg-secondary/80 text-secondary-foreground shadow-sm" : "bg-accent/80 text-accent-foreground shadow-sm")
+                                                        : "bg-muted/50 text-muted-foreground hover:bg-muted"
+                                                )}
+                                                onClick={() => {
+                                                    setSelectedModes(prev => prev.includes(mode) ? prev.filter(m => m !== mode) : [...prev, mode]);
+                                                }}
+                                            >
+                                                {mode === 'MAKE_AHEAD' ? '作り置き' : mode === 'LUNCH' ? 'お昼' : '晩ごはん'}
+                                            </Badge>
+                                        ))}
+                                    </div>
+
+                                    <DrawerHeader className="px-0 pt-4 pb-2">
+                                        <DrawerTitle className="text-left flex items-center gap-2">
+                                            <Tag className="w-5 h-5 text-primary" /> Tags
+                                        </DrawerTitle>
+                                    </DrawerHeader>
+                                    <div className="pb-4 flex flex-wrap gap-2">
                                         {allTags.length === 0 ? (
                                             <p className="text-sm text-muted-foreground italic">No tags combined.</p>
                                         ) : (
@@ -192,9 +216,9 @@ export function RecipeList({ onSelectRecipe, onCreateNew }: { onSelectRecipe: (i
                                     <DrawerFooter className="px-0 pt-2 pb-6 flex flex-row gap-2">
                                         <Button 
                                             variant="outline" 
-                                            onClick={() => setSelectedTags([])} 
+                                            onClick={() => { setSelectedTags([]); setSelectedModes([]); }} 
                                             className="flex-1 rounded-full text-muted-foreground"
-                                            disabled={selectedTags.length === 0}
+                                            disabled={selectedTags.length === 0 && selectedModes.length === 0}
                                         >
                                             Clear Filters
                                         </Button>
@@ -211,12 +235,16 @@ export function RecipeList({ onSelectRecipe, onCreateNew }: { onSelectRecipe: (i
 
                     {/* Mode Tabs */}
                     <div className="overflow-x-auto pb-1 no-scrollbar flex -mx-1 px-1">
-                        <Tabs value={selectedMode} onValueChange={setSelectedMode} className="w-full">
-                            <TabsList className="h-12 p-1 bg-muted/50 rounded-2xl w-max grid grid-cols-4 min-w-full">
+                        <Tabs value={selectedModes.length === 0 ? "ALL" : selectedModes.length === 1 ? selectedModes[0] : "MULTIPLE"} onValueChange={(val) => {
+                            if (val === "ALL") setSelectedModes([]);
+                            else if (val !== "MULTIPLE") setSelectedModes([val]);
+                        }} className="w-full">
+                            <TabsList className="h-12 p-1 bg-muted/50 rounded-2xl w-max grid grid-cols-4 min-w-full relative">
                                 <TabsTrigger value="ALL" className="rounded-xl font-bold text-xs data-[state=active]:bg-card data-[state=active]:shadow-sm">すべて</TabsTrigger>
                                 <TabsTrigger value="MAKE_AHEAD" className="rounded-xl font-bold text-xs data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:shadow-sm">作り置き</TabsTrigger>
                                 <TabsTrigger value="LUNCH" className="rounded-xl font-bold text-xs data-[state=active]:bg-secondary/50 data-[state=active]:text-secondary-foreground data-[state=active]:shadow-sm">お昼</TabsTrigger>
                                 <TabsTrigger value="DINNER" className="rounded-xl font-bold text-xs data-[state=active]:bg-accent/50 data-[state=active]:text-accent-foreground data-[state=active]:shadow-sm">晩ごはん</TabsTrigger>
+                                <TabsTrigger value="MULTIPLE" className="hidden">複数</TabsTrigger>
                             </TabsList>
                         </Tabs>
                     </div>
@@ -240,7 +268,7 @@ export function RecipeList({ onSelectRecipe, onCreateNew }: { onSelectRecipe: (i
                         variant="outline" 
                         onClick={() => {
                             setSearchQuery("");
-                            setSelectedMode("ALL");
+                            setSelectedModes([]);
                             setSelectedTags([]);
                         }} 
                         className="gap-2 rounded-full text-xs font-bold"
