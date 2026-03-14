@@ -1,10 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { api } from "../api";
 import { Recipe } from "../types/schema.org";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Download, Plus, AlertCircle, Clock } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
+import { Download, Plus, AlertCircle, Clock, Search, Filter, X, Tag } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function RecipeList({ onSelectRecipe, onCreateNew }: { onSelectRecipe: (id: string) => void, onCreateNew: () => void }) {
@@ -12,17 +15,66 @@ export function RecipeList({ onSelectRecipe, onCreateNew }: { onSelectRecipe: (i
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
+    // Filters state
+    const [searchQuery, setSearchQuery] = useState("");
+    const [selectedMode, setSelectedMode] = useState<string>("ALL");
+    const [selectedTags, setSelectedTags] = useState<string[]>([]);
+    const [allTags, setAllTags] = useState<string[]>([]);
+
     useEffect(() => {
         setLoading(true);
         setError(null);
         api.getRecipes()
-            .then(setRecipes)
+            .then(data => {
+                setRecipes(data);
+                const tags = new Set<string>();
+                data.forEach(r => r.tags?.forEach(t => tags.add(t)));
+                setAllTags(Array.from(tags).sort());
+            })
             .catch(err => {
                 console.error("Fetch error:", err);
                 setError(err.message || "Failed to load recipes");
             })
             .finally(() => setLoading(false));
     }, []);
+
+    const filteredRecipes = useMemo(() => {
+        return recipes.filter(r => {
+            // Mode filter
+            if (selectedMode !== "ALL" && r.cookingMode !== selectedMode) return false;
+            
+            // Tags filter (AND condition)
+            if (selectedTags.length > 0) {
+                if (!r.tags) return false;
+                const hasAllTags = selectedTags.every(t => r.tags!.includes(t));
+                if (!hasAllTags) return false;
+            }
+
+            // Text search (Name, Category, Tags, Ingredient names)
+            if (searchQuery) {
+                const q = searchQuery.toLowerCase();
+                const nameMatch = r.name.toLowerCase().includes(q);
+                const tagMatch = r.tags?.some(t => t.toLowerCase().includes(q));
+                let ingMatch = false;
+                if (r.recipeIngredient) {
+                    try {
+                        const ings = typeof r.recipeIngredient === 'string' ? JSON.parse(r.recipeIngredient) : r.recipeIngredient;
+                        if (Array.isArray(ings)) {
+                            ingMatch = ings.some((i: any) => i.name && typeof i.name === 'string' && i.name.toLowerCase().includes(q));
+                        }
+                    } catch (e) { console.error("Filter JSON parse error:", e); }
+                }
+                if (!nameMatch && !tagMatch && !ingMatch) return false;
+            }
+            return true;
+        });
+    }, [recipes, searchQuery, selectedMode, selectedTags]);
+
+    const toggleTag = (tag: string) => {
+        setSelectedTags(prev => 
+            prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
+        );
+    };
 
     const parseISOToMinutes = (iso: string) => {
         const match = iso?.match(/PT(\d+)M/);
@@ -68,6 +120,109 @@ export function RecipeList({ onSelectRecipe, onCreateNew }: { onSelectRecipe: (i
                 </div>
             </div>
 
+            {recipes.length > 0 && (
+                <div className="space-y-4 mb-8">
+                    {/* Search Bar & Filter Drawer */}
+                    <div className="flex gap-2">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-3.5 top-3.5 h-5 w-5 text-muted-foreground" />
+                            <Input
+                                placeholder="Search recipes, ingredients, tags..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="pl-11 h-12 rounded-2xl bg-card border-none shadow-sm text-base focus-visible:ring-1 focus-visible:ring-primary/50"
+                            />
+                            {searchQuery && (
+                                <button 
+                                    onClick={() => setSearchQuery("")} 
+                                    className="absolute right-3.5 top-3.5 text-muted-foreground hover:text-foreground"
+                                >
+                                    <X className="h-5 w-5" />
+                                </button>
+                            )}
+                        </div>
+                        <Drawer>
+                            <DrawerTrigger asChild>
+                                <Button 
+                                    variant="outline" 
+                                    className={cn(
+                                        "h-12 w-12 rounded-2xl flex-shrink-0 bg-card border-none shadow-sm relative",
+                                        selectedTags.length > 0 && "text-primary bg-primary/10"
+                                    )}
+                                >
+                                    <Filter className="h-5 w-5" />
+                                    {selectedTags.length > 0 && (
+                                        <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-primary text-primary-foreground text-[10px] font-bold rounded-full flex items-center justify-center shadow-sm">
+                                            {selectedTags.length}
+                                        </span>
+                                    )}
+                                </Button>
+                            </DrawerTrigger>
+                            <DrawerContent className="px-4">
+                                <div className="mx-auto w-full max-w-sm">
+                                    <DrawerHeader className="px-0">
+                                        <DrawerTitle className="text-left flex items-center gap-2">
+                                            <Tag className="w-5 h-5 text-primary" /> Filter by Tags
+                                        </DrawerTitle>
+                                        <DrawerDescription className="text-left">
+                                            Select multiple tags to narrow down results.
+                                        </DrawerDescription>
+                                    </DrawerHeader>
+                                    <div className="py-4 flex flex-wrap gap-2">
+                                        {allTags.length === 0 ? (
+                                            <p className="text-sm text-muted-foreground italic">No tags combined.</p>
+                                        ) : (
+                                            allTags.map(tag => (
+                                                <Badge
+                                                    key={tag}
+                                                    variant={selectedTags.includes(tag) ? "default" : "secondary"}
+                                                    className={cn(
+                                                        "px-3 py-1.5 text-sm font-semibold cursor-pointer transition-all active:scale-95",
+                                                        selectedTags.includes(tag) 
+                                                            ? "bg-primary text-primary-foreground shadow-md"
+                                                            : "bg-muted/50 text-muted-foreground hover:bg-muted"
+                                                    )}
+                                                    onClick={() => toggleTag(tag)}
+                                                >
+                                                    #{tag}
+                                                </Badge>
+                                            ))
+                                        )}
+                                    </div>
+                                    <DrawerFooter className="px-0 pt-2 pb-6 flex flex-row gap-2">
+                                        <Button 
+                                            variant="outline" 
+                                            onClick={() => setSelectedTags([])} 
+                                            className="flex-1 rounded-full text-muted-foreground"
+                                            disabled={selectedTags.length === 0}
+                                        >
+                                            Clear Filters
+                                        </Button>
+                                        <DrawerClose asChild>
+                                            <Button className="flex-[2] rounded-full font-bold shadow-md shadow-primary/20">
+                                                Show Results ({filteredRecipes.length})
+                                            </Button>
+                                        </DrawerClose>
+                                    </DrawerFooter>
+                                </div>
+                            </DrawerContent>
+                        </Drawer>
+                    </div>
+
+                    {/* Mode Tabs */}
+                    <div className="overflow-x-auto pb-1 no-scrollbar flex -mx-1 px-1">
+                        <Tabs value={selectedMode} onValueChange={setSelectedMode} className="w-full">
+                            <TabsList className="h-12 p-1 bg-muted/50 rounded-2xl w-max grid grid-cols-4 min-w-full">
+                                <TabsTrigger value="ALL" className="rounded-xl font-bold text-xs data-[state=active]:bg-card data-[state=active]:shadow-sm">すべて</TabsTrigger>
+                                <TabsTrigger value="MAKE_AHEAD" className="rounded-xl font-bold text-xs data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:shadow-sm">作り置き</TabsTrigger>
+                                <TabsTrigger value="LUNCH" className="rounded-xl font-bold text-xs data-[state=active]:bg-secondary/50 data-[state=active]:text-secondary-foreground data-[state=active]:shadow-sm">お昼</TabsTrigger>
+                                <TabsTrigger value="DINNER" className="rounded-xl font-bold text-xs data-[state=active]:bg-accent/50 data-[state=active]:text-accent-foreground data-[state=active]:shadow-sm">晩ごはん</TabsTrigger>
+                            </TabsList>
+                        </Tabs>
+                    </div>
+                </div>
+            )}
+
             {recipes.length === 0 ? (
                 <div className="flex flex-col items-center justify-center p-12 text-center border-2 border-dashed rounded-3xl bg-muted/20">
                     <p className="text-muted-foreground italic mb-4">No recipes found. Create one!</p>
@@ -76,9 +231,27 @@ export function RecipeList({ onSelectRecipe, onCreateNew }: { onSelectRecipe: (i
                         Add First Recipe
                     </Button>
                 </div>
+            ) : filteredRecipes.length === 0 ? (
+                <div className="flex flex-col items-center justify-center p-12 text-center rounded-3xl bg-muted/10 border border-muted/30">
+                    <Search className="w-10 h-10 text-muted-foreground/30 mb-3" />
+                    <p className="text-muted-foreground font-semibold mb-1">No matches found</p>
+                    <p className="text-sm text-muted-foreground/80 mb-4">Try adjusting your filters or search terms.</p>
+                    <Button 
+                        variant="outline" 
+                        onClick={() => {
+                            setSearchQuery("");
+                            setSelectedMode("ALL");
+                            setSelectedTags([]);
+                        }} 
+                        className="gap-2 rounded-full text-xs font-bold"
+                    >
+                        <X className="w-3.5 h-3.5" />
+                        Clear all filters
+                    </Button>
+                </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {recipes.map((r) => {
+                    {filteredRecipes.map((r) => {
                         const prepMin = parseISOToMinutes(r.prepTime || "");
                         const cookMin = parseISOToMinutes(r.cookTime || "");
                         
@@ -143,3 +316,5 @@ export function RecipeList({ onSelectRecipe, onCreateNew }: { onSelectRecipe: (i
         </div>
     );
 }
+
+// Ensure Search, Filter, X, Tag are imported from lucide-react
