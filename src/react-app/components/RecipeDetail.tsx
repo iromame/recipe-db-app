@@ -5,8 +5,30 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import { ChevronLeft, Edit, Trash2, Sun, ExternalLink, Clock, Utensils, Tag, NotepadText } from "lucide-react";
+import { ChevronLeft, Edit, Trash2, Sun, ExternalLink, Clock, Utensils, Tag, NotepadText, Copy, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+function CopyButton({ text, label }: { text: string, label?: string }) {
+    const [copied, setCopied] = useState(false);
+
+    const handleCopy = async () => {
+        if (!text) return;
+        try {
+            await navigator.clipboard.writeText(text);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        } catch (err) {
+            console.error("Failed to copy:", err);
+        }
+    };
+
+    return (
+        <Button variant="ghost" size="sm" onClick={handleCopy} className="h-8 px-2 text-muted-foreground hover:text-primary gap-1.5" title={`${label}をコピー`}>
+            {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+            <span className="text-xs font-semibold">{copied ? "Copied!" : "Copy"}</span>
+        </Button>
+    );
+}
 
 export function RecipeDetail({ id, onBack, onEdit, onDelete }: { id: string, onBack: () => void, onEdit: (id: string) => void, onDelete: (id: string) => void }) {
     const [recipe, setRecipe] = useState<Recipe | null>(null);
@@ -94,6 +116,21 @@ export function RecipeDetail({ id, onBack, onEdit, onDelete }: { id: string, onB
 
     const prepMin = parseISOToMinutes(recipe.prepTime || "");
     const cookMin = parseISOToMinutes(recipe.cookTime || "");
+
+    const getIngredientsText = () => {
+        if (!ingredients) return "";
+        return ingredients.map((ing: any) => {
+            const parts = [ing.name];
+            if (ing.amount) parts.push(ing.amount);
+            if (ing.unit) parts.push(ing.unit);
+            return `- ${parts.join(" ")}`;
+        }).join("\n");
+    };
+
+    const getInstructionsText = () => {
+        if (!instructions) return "";
+        return instructions.map((step: any, idx: number) => `${idx + 1}. ${step.text}`).join("\n");
+    };
 
     return (
         <div className="bg-background min-h-screen pb-24">
@@ -205,9 +242,12 @@ export function RecipeDetail({ id, onBack, onEdit, onDelete }: { id: string, onB
                     {/* Ingredients */}
                     <Card className="lg:col-span-2 rounded-[2rem] border-muted bg-card shadow-sm">
                         <CardHeader className="pb-4">
-                            <CardTitle className="flex items-center gap-2 text-lg font-bold">
-                                <Utensils className="w-5 h-5 text-primary" />
-                                <span>材料</span>
+                            <CardTitle className="flex items-center justify-between text-lg font-bold">
+                                <div className="flex items-center gap-2">
+                                    <Utensils className="w-5 h-5 text-primary" />
+                                    <span>材料</span>
+                                </div>
+                                <CopyButton text={getIngredientsText()} label="材料" />
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
@@ -226,9 +266,12 @@ export function RecipeDetail({ id, onBack, onEdit, onDelete }: { id: string, onB
 
                     {/* Instructions */}
                     <div className="lg:col-span-3 space-y-6">
-                        <div className="flex items-center gap-2 mb-4">
-                            <Tag className="w-5 h-5 text-primary" />
-                            <h3 className="text-xl font-bold">作り方</h3>
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-2">
+                                <Tag className="w-5 h-5 text-primary" />
+                                <h3 className="text-xl font-bold">作り方</h3>
+                            </div>
+                            <CopyButton text={getInstructionsText()} label="作り方" />
                         </div>
                         <div className="space-y-8">
                             {instructions?.map((step: any, idx: number) => (
@@ -246,9 +289,12 @@ export function RecipeDetail({ id, onBack, onEdit, onDelete }: { id: string, onB
                         {/* Notes */}
                         {recipe.notes && (
                             <div className="pt-8 mt-8 border-t border-muted/30">
-                                <div className="flex items-center gap-2 mb-4 text-muted-foreground">
-                                    <NotepadText className="w-5 h-5" />
-                                    <h3 className="text-lg font-bold">メモ</h3>
+                                <div className="flex items-center justify-between mb-4 text-muted-foreground">
+                                    <div className="flex items-center gap-2">
+                                        <NotepadText className="w-5 h-5" />
+                                        <h3 className="text-lg font-bold">メモ</h3>
+                                    </div>
+                                    <CopyButton text={recipe.notes || ""} label="メモ" />
                                 </div>
                                 <div className="p-6 bg-muted/20 border border-transparent rounded-3xl text-foreground whitespace-pre-wrap leading-relaxed shadow-inner">
                                     {recipe.notes}

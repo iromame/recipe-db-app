@@ -1,13 +1,13 @@
 import { useEffect, useState, useMemo } from "react";
 import { api } from "../api";
 import { Recipe } from "../types/schema.org";
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Drawer, DrawerClose, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
-import { Download, Plus, AlertCircle, Clock, Search, Filter, X, Tag, Utensils } from "lucide-react";
+import { Download, Plus, AlertCircle, Clock, Search, Filter, X, Tag, Utensils, CalendarClock, Sun, Moon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function RecipeList({ onSelectRecipe, onCreateNew }: { onSelectRecipe: (id: string) => void, onCreateNew: () => void }) {
@@ -278,7 +278,7 @@ export function RecipeList({ onSelectRecipe, onCreateNew }: { onSelectRecipe: (i
                     </Button>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
                     {filteredRecipes.map((r) => {
                         const prepMin = parseISOToMinutes(r.prepTime || "");
                         const cookMin = parseISOToMinutes(r.cookTime || "");
@@ -289,41 +289,41 @@ export function RecipeList({ onSelectRecipe, onCreateNew }: { onSelectRecipe: (i
                                 onClick={() => r.id && onSelectRecipe(r.id)}
                                 className="group cursor-pointer hover:shadow-md transition-all active:scale-[0.98] border-muted overflow-hidden bg-card"
                             >
-                                <CardHeader className="p-4 pb-2">
-                                    <div className="flex flex-wrap gap-1.5 mb-2">
-                                        <Badge variant="outline" className={cn(
-                                            "px-2 py-0 border text-[9px] font-black uppercase tracking-widest",
-                                            r.cookingMode === 'MAKE_AHEAD' ? 'border-primary/50 text-primary bg-primary/10' :
-                                            r.cookingMode === 'LUNCH' ? 'border-secondary/50 text-secondary-foreground bg-secondary/50' :
-                                            'border-accent/50 text-accent-foreground bg-accent/50'
-                                        )}>
-                                            {r.cookingMode?.replace('_', ' ') || 'DINNER'}
-                                        </Badge>
-                                        {r.tags?.slice(0, 3).map(t => (
-                                            <Badge key={t} variant="secondary" className="px-2 py-0 text-[9px] font-bold bg-muted/60 text-muted-foreground">
-                                                #{t}
-                                            </Badge>
-                                        ))}
-                                        {(r.tags?.length || 0) > 3 && (
-                                            <span className="text-[10px] text-muted-foreground font-medium pl-1 self-center">
-                                                +{r.tags!.length - 3}
-                                            </span>
+                                <div className="px-3.5 py-2.5 flex flex-col justify-center">
+                                    <h3 className="text-[15px] font-bold leading-tight line-clamp-2 group-hover:text-primary transition-colors mb-1 flex items-start gap-1.5">
+                                        {r.cookingMode === 'MAKE_AHEAD' ? (
+                                            <CalendarClock className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                                        ) : r.cookingMode === 'LUNCH' ? (
+                                            <Sun className="w-4 h-4 text-secondary-foreground mt-0.5 flex-shrink-0" />
+                                        ) : (
+                                            <Moon className="w-4 h-4 text-accent-foreground mt-0.5 flex-shrink-0" />
                                         )}
-                                    </div>
-                                    <CardTitle className="text-lg leading-tight line-clamp-2 min-h-[2.5rem] group-hover:text-primary transition-colors">
-                                        {r.name}
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardFooter className="p-4 pt-4 border-t border-muted/30 bg-muted/10 flex justify-between items-center text-xs text-muted-foreground font-medium">
-                                    <div className="flex items-center gap-1">
-                                        <Clock className="w-3.5 h-3.5" />
-                                        <span>Prep: {prepMin > 0 ? `${prepMin}m` : '--'}</span>
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                        <Clock className="w-3.5 h-3.5" />
-                                        <span>Cook: {cookMin > 0 ? `${cookMin}m` : '--'}</span>
-                                    </div>
-                                </CardFooter>
+                                        <span>{r.name}</span>
+                                    </h3>
+                                    
+                                    {((prepMin > 0 || cookMin > 0) || (r.tags && r.tags.length > 0)) && (
+                                        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground w-full">
+                                            {(prepMin > 0 || cookMin > 0) && (
+                                                <div className="flex items-center gap-1">
+                                                    <Clock className="w-3 h-3 opacity-70" />
+                                                    <span className="font-semibold text-[10px] uppercase truncate max-w-[100px]">
+                                                        {prepMin > 0 ? `P:${prepMin}m ` : ''}
+                                                        {cookMin > 0 ? `C:${cookMin}m` : ''}
+                                                    </span>
+                                                </div>
+                                            )}
+                                            
+                                            {(r.tags && r.tags.length > 0) && (
+                                                <div className={cn("flex items-center gap-1 truncate max-w-[120px]", (prepMin > 0 || cookMin > 0) && "border-l pl-2 border-muted/50")}>
+                                                    <Tag className="w-3 h-3 opacity-70 flex-shrink-0" />
+                                                    <span className="font-semibold text-[10px] truncate">
+                                                        {r.tags.map(t => `#${t}`).join(', ')}
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
                             </Card>
                         );
                     })}
