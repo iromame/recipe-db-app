@@ -43,6 +43,13 @@
       "when": 1773895311071,
       "tag": "0005_hot_blue_shield",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1773895640699,
+      "tag": "0006_abandoned_rawhide_kid",
+      "breakpoints": true
     }
   ]
 }
