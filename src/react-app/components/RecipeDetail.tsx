@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import { ChevronLeft, Edit, Trash2, Sun, ExternalLink, Clock, Utensils, Tag } from "lucide-react";
+import { ChevronLeft, Edit, Trash2, Sun, ExternalLink, Clock, Utensils, Tag, NotepadText } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function RecipeDetail({ id, onBack, onEdit, onDelete }: { id: string, onBack: () => void, onEdit: (id: string) => void, onDelete: (id: string) => void }) {
@@ -242,6 +242,19 @@ export function RecipeDetail({ id, onBack, onEdit, onDelete }: { id: string, onB
                                 </div>
                             ))}
                         </div>
+
+                        {/* Notes */}
+                        {recipe.notes && (
+                            <div className="pt-8 mt-8 border-t border-muted/30">
+                                <div className="flex items-center gap-2 mb-4 text-muted-foreground">
+                                    <NotepadText className="w-5 h-5" />
+                                    <h3 className="text-lg font-bold">メモ</h3>
+                                </div>
+                                <div className="p-6 bg-muted/20 border border-transparent rounded-3xl text-foreground whitespace-pre-wrap leading-relaxed shadow-inner">
+                                    {recipe.notes}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

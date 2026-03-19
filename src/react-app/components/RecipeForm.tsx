@@ -20,7 +20,8 @@ export function RecipeForm({ id, onSave, onCancel }: { id?: string, onSave: (rec
         prepTime: "",
         cookTime: "",
         url: "",
-        images: []
+        images: [],
+        notes: ""
     });
     const [tagInput, setTagInput] = useState("");
     const [allTags, setAllTags] = useState<string[]>([]);
@@ -149,6 +150,7 @@ export function RecipeForm({ id, onSave, onCancel }: { id?: string, onSave: (rec
             images: recipe.images,
             recipeIngredient: ingredientsText.split("\n").filter(l => l.trim()).map(name => ({ name })),
             recipeInstructions: instructionsText.split("\n\n").filter(l => l.trim()).map(text => ({ text })),
+            notes: recipe.notes || "",
         };
 
         if (id) {
@@ -393,6 +395,16 @@ export function RecipeForm({ id, onSave, onCancel }: { id?: string, onSave: (rec
                             onChange={e => setInstructionsText(e.target.value)}
                             className="rounded-3xl p-5 bg-muted/20 border-transparent focus-visible:ring-1 focus-visible:ring-primary/50 text-base leading-relaxed placeholder:text-muted-foreground/40 resize-none shadow-inner"
                             placeholder="1. 野菜を切る&#10;&#10;2. 炒める"
+                        />
+                    </div>
+                    <div className="space-y-3">
+                        <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Notes / Memo</label>
+                        <Textarea
+                            rows={4}
+                            value={recipe.notes || ""}
+                            onChange={e => setRecipe({ ...recipe, notes: e.target.value })}
+                            className="rounded-3xl p-5 bg-muted/20 border-transparent focus-visible:ring-1 focus-visible:ring-primary/50 text-base leading-relaxed placeholder:text-muted-foreground/40 resize-none shadow-inner"
+                            placeholder="・塩加減は適度に調整&#10;・子供用にはコショウを控える"
                         />
                     </div>
                 </section>

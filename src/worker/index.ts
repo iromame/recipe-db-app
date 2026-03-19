@@ -104,6 +104,7 @@ app.post("/api/recipes", async (c) => {
         recipeInstructions: body.recipeInstructions || null,
         url: body.url || null,
         images: body.images || null,
+        notes: body.notes || null,
         structuredData: body,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -133,6 +134,7 @@ app.put("/api/recipes/:id", async (c) => {
     if (body.recipeInstructions !== undefined) updateData.recipeInstructions = body.recipeInstructions;
     if (body.url !== undefined) updateData.url = body.url;
     if (body.images !== undefined) updateData.images = body.images;
+    if (body.notes !== undefined) updateData.notes = body.notes;
     if (body.structuredData !== undefined) updateData.structuredData = body.structuredData;
     updateData.updatedAt = new Date();
 

@@ -13,6 +13,7 @@ export const recipes = sqliteTable("recipes", {
     url: text("url"), // Reference URL
     images: text("images", { mode: "json" }), // JSON array of image keys (R2 keys)
     structuredData: text("structured_data", { mode: "json" }), // Full Schema.org JSON-LD (optional)
+    notes: text("notes"), // Free text memo
     createdAt: integer("created_at", { mode: "timestamp" })
         .notNull()
         .default(new Date()),

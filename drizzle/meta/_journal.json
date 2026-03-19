@@ -36,6 +36,13 @@
       "when": 1773491892952,
       "tag": "0004_polite_sprite",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1773895311071,
+      "tag": "0005_hot_blue_shield",
+      "breakpoints": true
     }
   ]
 }
