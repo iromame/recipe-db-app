@@ -33,7 +33,7 @@ function App() {
 						className="text-4xl font-extrabold text-blue-800 tracking-tight cursor-pointer inline-block"
 						onClick={goToList}
 					>
-						Family Recipe Kitchen
+						Mame
 					</h1>
 					<p className="text-gray-500 mt-2">A standard-compliant recipe database.</p>
 				</div>

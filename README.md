@@ -1,4 +1,4 @@
-# Family Recipe Database
+# Mame
 
 A standard-compliant recipe database built for 10-year maintenance-free operation.
 This project uses Cloudflare Workers, D1 (SQLite), Hono, and React + Vite.
