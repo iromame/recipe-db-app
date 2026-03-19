@@ -26,14 +26,21 @@ export default defineConfig({
 				name: 'Mame',
 				short_name: 'Mame',
 				description: 'A standard-compliant recipe database.',
-				theme_color: '#1e3a8a',
+				theme_color: '#FBC02D',
 				background_color: '#ffffff',
 				display: 'standalone',
 				icons: [
 					{
-						src: 'favicon.png',
-						sizes: '1024x1024',
-						type: 'image/png'
+						src: 'favicon.svg',
+						sizes: 'any',
+						type: 'image/svg+xml',
+						purpose: 'any'
+					},
+					{
+						src: 'favicon.svg',
+						sizes: 'any',
+						type: 'image/svg+xml',
+						purpose: 'maskable'
 					},
 					{
 						src: 'apple-touch-icon.png',

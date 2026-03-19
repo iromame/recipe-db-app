@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Soy bean body: plump and rounded -->
+  <path d="M22,8 C28,10 28,22 22,24 C16,26 6,24 4,16 C2,8 14,6 22,8 Z" fill="#FBC02D" stroke="#E65100" stroke-width="1.5" />
+  <!-- Hilum (the "eye" of the bean) -->
+  <rect x="18" y="14" width="1.5" height="4" rx="0.75" fill="#5D4037" opacity="0.8" transform="rotate(20 18.75 16)" />
+</svg>
