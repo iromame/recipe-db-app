@@ -6,8 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Drawer, DrawerClose, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
-import { Download, Plus, AlertCircle, Clock, Search, Filter, X, Tag, Utensils, CalendarClock, Sun, Moon } from "lucide-react";
+import { Drawer, DrawerClose, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
+import { Download, Plus, AlertCircle, Clock, Search, Filter, X, Tag, Utensils } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function RecipeList({ onSelectRecipe, onCreateNew }: { onSelectRecipe: (id: string) => void, onCreateNew: () => void }) {
@@ -105,180 +105,167 @@ export function RecipeList({ onSelectRecipe, onCreateNew }: { onSelectRecipe: (i
     );
 
     return (
-        <div className="space-y-6">
-            <div className="flex justify-between items-center mb-6">
-                <h2 className="text-3xl font-extrabold tracking-tight">My Recipes</h2>
-                <div className="flex gap-2">
-                    <Button variant="outline" asChild className="gap-2 hidden sm:flex">
-                        <a href="/api/export" download title="Export all recipes as JSON">
-                            <Download className="w-4 h-4" />
-                            <span>Export</span>
-                        </a>
-                    </Button>
-                    <Button onClick={onCreateNew} className="gap-2 shadow-lg hover:shadow-xl transition-shadow rounded-xl">
-                        <Plus className="w-5 h-5" />
-                        <span className="font-bold">Add Recipe</span>
-                    </Button>
+        <div className="space-y-10 pb-20">
+            {/* 1. Header & Primary Mode Tabs */}
+            <div className="space-y-6">
+                <div className="flex flex-col gap-2">
+                    <h2 className="text-4xl font-extrabold tracking-tight text-foreground">
+                        レシピを探す
+                    </h2>
+                    <p className="text-muted-foreground text-sm font-medium">
+                        {recipes.length} 品のレシピが登録されています
+                    </p>
                 </div>
+
+                <Tabs 
+                    value={selectedModes.length === 0 ? "ALL" : selectedModes.length === 1 ? selectedModes[0] : "MULTIPLE"} 
+                    onValueChange={(val) => {
+                        if (val === "ALL") setSelectedModes([]);
+                        else if (val !== "MULTIPLE") setSelectedModes([val]);
+                    }} 
+                    className="w-full"
+                >
+                    <TabsList className="h-16 w-full p-1.5 bg-muted/40 rounded-3xl border border-border/40 backdrop-blur-sm grid grid-cols-4">
+                        <TabsTrigger value="ALL" className="rounded-2xl font-bold transition-all data-[state=active]:bg-background data-[state=active]:shadow-lg data-[state=active]:text-primary">すべて</TabsTrigger>
+                        <TabsTrigger value="MAKE_AHEAD" className="rounded-2xl font-bold transition-all data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-sm">作り置き</TabsTrigger>
+                        <TabsTrigger value="LUNCH" className="rounded-2xl font-bold transition-all data-[state=active]:bg-secondary/20 data-[state=active]:text-secondary-foreground data-[state=active]:shadow-sm">お昼</TabsTrigger>
+                        <TabsTrigger value="DINNER" className="rounded-2xl font-bold transition-all data-[state=active]:bg-accent/20 data-[state=active]:text-accent-foreground data-[state=active]:shadow-sm">晩ごはん</TabsTrigger>
+                    </TabsList>
+                </Tabs>
             </div>
 
-            {recipes.length > 0 && (
-                <div className="space-y-4 mb-8">
-                    {/* Search Bar & Filter Drawer */}
-                    <div className="flex gap-2">
-                        <div className="relative flex-1">
-                            <Search className="absolute left-3.5 top-3.5 h-5 w-5 text-muted-foreground" />
-                            <Input
-                                placeholder="Search recipes, ingredients, tags..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="pl-11 h-12 rounded-2xl bg-card border-none shadow-sm text-base focus-visible:ring-1 focus-visible:ring-primary/50"
-                            />
-                            {searchQuery && (
-                                <button 
-                                    onClick={() => setSearchQuery("")} 
-                                    className="absolute right-3.5 top-3.5 text-muted-foreground hover:text-foreground"
-                                >
-                                    <X className="h-5 w-5" />
-                                </button>
-                            )}
-                        </div>
-                        <Drawer>
-                            <DrawerTrigger asChild>
-                                <Button 
-                                    variant="outline" 
-                                    className={cn(
-                                        "h-12 w-12 rounded-2xl flex-shrink-0 bg-card border-none shadow-sm relative",
-                                        (selectedTags.length > 0 || selectedModes.length > 0) && "text-primary bg-primary/10"
-                                    )}
-                                >
-                                    <Filter className="h-5 w-5" />
-                                    {(selectedTags.length > 0 || selectedModes.length > 0) && (
-                                        <span className="absolute -top-1.5 -right-1.5 min-w-[1.25rem] px-1 h-5 bg-primary text-primary-foreground text-[10px] font-bold rounded-full flex items-center justify-center shadow-sm">
-                                            {selectedTags.length + selectedModes.length}
-                                        </span>
-                                    )}
-                                </Button>
-                            </DrawerTrigger>
-                            <DrawerContent className="px-4">
-                                <div className="mx-auto w-full max-w-sm">
-                                    <DrawerHeader className="px-0 pb-2">
-                                        <DrawerTitle className="text-left flex items-center gap-2">
-                                            <Utensils className="w-5 h-5 text-primary" /> Cooking Mode
-                                        </DrawerTitle>
-                                    </DrawerHeader>
-                                    <div className="pb-4 flex flex-wrap gap-2 border-b border-muted">
-                                        {['MAKE_AHEAD', 'LUNCH', 'DINNER'].map(mode => (
-                                            <Badge
-                                                key={mode}
-                                                variant="outline"
-                                                className={cn(
-                                                    "px-3 py-1.5 text-sm font-semibold cursor-pointer transition-all active:scale-95 border-none",
-                                                    selectedModes.includes(mode) 
-                                                        ? (mode === 'MAKE_AHEAD' ? "bg-primary/20 text-primary shadow-sm" : mode === 'LUNCH' ? "bg-secondary/80 text-secondary-foreground shadow-sm" : "bg-accent/80 text-accent-foreground shadow-sm")
-                                                        : "bg-muted/50 text-muted-foreground hover:bg-muted"
-                                                )}
-                                                onClick={() => {
-                                                    setSelectedModes(prev => prev.includes(mode) ? prev.filter(m => m !== mode) : [...prev, mode]);
-                                                }}
-                                            >
-                                                {mode === 'MAKE_AHEAD' ? '作り置き' : mode === 'LUNCH' ? 'お昼' : '晩ごはん'}
-                                            </Badge>
-                                        ))}
-                                    </div>
-
-                                    <DrawerHeader className="px-0 pt-4 pb-2">
-                                        <DrawerTitle className="text-left flex items-center gap-2">
-                                            <Tag className="w-5 h-5 text-primary" /> Tags
-                                        </DrawerTitle>
-                                    </DrawerHeader>
-                                    <div className="pb-4 flex flex-wrap gap-2">
-                                        {allTags.length === 0 ? (
-                                            <p className="text-sm text-muted-foreground italic">No tags combined.</p>
-                                        ) : (
-                                            allTags.map(tag => (
-                                                <Badge
-                                                    key={tag}
-                                                    variant={selectedTags.includes(tag) ? "default" : "secondary"}
-                                                    className={cn(
-                                                        "px-3 py-1.5 text-sm font-semibold cursor-pointer transition-all active:scale-95",
-                                                        selectedTags.includes(tag) 
-                                                            ? "bg-primary text-primary-foreground shadow-md"
-                                                            : "bg-muted/50 text-muted-foreground hover:bg-muted"
-                                                    )}
-                                                    onClick={() => toggleTag(tag)}
-                                                >
-                                                    #{tag}
-                                                </Badge>
-                                            ))
-                                        )}
-                                    </div>
-                                    <DrawerFooter className="px-0 pt-2 pb-6 flex flex-row gap-2">
-                                        <Button 
-                                            variant="outline" 
-                                            onClick={() => { setSelectedTags([]); setSelectedModes([]); }} 
-                                            className="flex-1 rounded-full text-muted-foreground"
-                                            disabled={selectedTags.length === 0 && selectedModes.length === 0}
-                                        >
-                                            Clear Filters
-                                        </Button>
-                                        <DrawerClose asChild>
-                                            <Button className="flex-[2] rounded-full font-bold shadow-md shadow-primary/20">
-                                                Show Results ({filteredRecipes.length})
-                                            </Button>
-                                        </DrawerClose>
-                                    </DrawerFooter>
-                                </div>
-                            </DrawerContent>
-                        </Drawer>
-                    </div>
-
-                    {/* Mode Tabs */}
-                    <div className="overflow-x-auto pb-1 no-scrollbar flex -mx-1 px-1">
-                        <Tabs value={selectedModes.length === 0 ? "ALL" : selectedModes.length === 1 ? selectedModes[0] : "MULTIPLE"} onValueChange={(val) => {
-                            if (val === "ALL") setSelectedModes([]);
-                            else if (val !== "MULTIPLE") setSelectedModes([val]);
-                        }} className="w-full">
-                            <TabsList className="h-12 p-1 bg-muted/50 rounded-2xl w-max grid grid-cols-4 min-w-full relative">
-                                <TabsTrigger value="ALL" className="rounded-xl font-bold text-xs data-[state=active]:bg-card data-[state=active]:shadow-sm">すべて</TabsTrigger>
-                                <TabsTrigger value="MAKE_AHEAD" className="rounded-xl font-bold text-xs data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:shadow-sm">作り置き</TabsTrigger>
-                                <TabsTrigger value="LUNCH" className="rounded-xl font-bold text-xs data-[state=active]:bg-secondary/50 data-[state=active]:text-secondary-foreground data-[state=active]:shadow-sm">お昼</TabsTrigger>
-                                <TabsTrigger value="DINNER" className="rounded-xl font-bold text-xs data-[state=active]:bg-accent/50 data-[state=active]:text-accent-foreground data-[state=active]:shadow-sm">晩ごはん</TabsTrigger>
-                                <TabsTrigger value="MULTIPLE" className="hidden">複数</TabsTrigger>
-                            </TabsList>
-                        </Tabs>
-                    </div>
+            {/* 2. Search & Controls */}
+            <div className="flex gap-3 sticky top-20 z-30 py-2 bg-background/60 backdrop-blur-md -mx-4 px-4">
+                <div className="relative flex-1 group">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                    <Input
+                        placeholder="レシピ名、材料、タグで検索..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-12 h-14 rounded-2xl bg-muted/30 border-none shadow-inner text-base focus-visible:ring-2 focus-visible:ring-primary/20 transition-all"
+                    />
+                    {searchQuery && (
+                        <button 
+                            onClick={() => setSearchQuery("")} 
+                            className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1 rounded-full hover:bg-muted/50 transition-all"
+                        >
+                            <X className="h-4 w-4" />
+                        </button>
+                    )}
                 </div>
-            )}
+                <Drawer>
+                    <DrawerTrigger asChild>
+                        <Button 
+                            variant="outline" 
+                            className={cn(
+                                "h-14 w-14 rounded-2xl flex-shrink-0 bg-muted/30 border-none shadow-inner relative transition-all active:scale-95",
+                                (selectedTags.length > 0 || selectedModes.length > 1) && "text-primary bg-primary/10 ring-2 ring-primary/20"
+                            )}
+                        >
+                            <Filter className="h-6 h-6" />
+                            {(selectedTags.length > 0 || selectedModes.length > 1) && (
+                                <span className="absolute -top-1 -right-1 min-w-[1.25rem] h-5 bg-primary text-primary-foreground text-[10px] font-black rounded-full flex items-center justify-center border-2 border-background">
+                                    {selectedTags.length + (selectedModes.length > 1 ? selectedModes.length : 0)}
+                                </span>
+                            )}
+                        </Button>
+                    </DrawerTrigger>
+                    <DrawerContent className="px-6 pb-12 rounded-t-[3rem]">
+                        <div className="mx-auto w-full max-w-sm space-y-8 mt-4">
+                            <div className="space-y-4">
+                                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
+                                    <Utensils className="w-3 h-3" /> 調理モード
+                                </label>
+                                <div className="flex flex-wrap gap-2">
+                                    {['MAKE_AHEAD', 'LUNCH', 'DINNER'].map(mode => (
+                                        <Badge
+                                            key={mode}
+                                            variant="outline"
+                                            className={cn(
+                                                "px-5 py-2.5 rounded-2xl text-sm font-bold cursor-pointer transition-all active:scale-95 border-none",
+                                                selectedModes.includes(mode) 
+                                                    ? (mode === 'MAKE_AHEAD' ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" : mode === 'LUNCH' ? "bg-secondary text-secondary-foreground shadow-lg shadow-secondary/20" : "bg-accent text-accent-foreground shadow-lg shadow-accent/20")
+                                                    : "bg-muted/50 text-muted-foreground hover:bg-muted"
+                                            )}
+                                            onClick={() => {
+                                                setSelectedModes(prev => prev.includes(mode) ? prev.filter(m => m !== mode) : [...prev, mode]);
+                                            }}
+                                        >
+                                            {mode === 'MAKE_AHEAD' ? '作り置き' : mode === 'LUNCH' ? 'お昼' : '晩ごはん'}
+                                        </Badge>
+                                    ))}
+                                </div>
+                            </div>
 
+                            <div className="space-y-4">
+                                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
+                                    <Tag className="w-3 h-3" /> タグ
+                                </label>
+                                <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto pr-2 no-scrollbar">
+                                    {allTags.map(tag => (
+                                        <Badge
+                                            key={tag}
+                                            variant={selectedTags.includes(tag) ? "default" : "secondary"}
+                                            className={cn(
+                                                "px-4 py-2 rounded-2xl text-sm font-bold cursor-pointer transition-all",
+                                                selectedTags.includes(tag) 
+                                                    ? "bg-primary text-primary-foreground shadow-md"
+                                                    : "bg-muted/30 text-muted-foreground border-transparent"
+                                            )}
+                                            onClick={() => toggleTag(tag)}
+                                        >
+                                            #{tag}
+                                        </Badge>
+                                    ))}
+                                </div>
+                            </div>
+                            
+                            <div className="flex gap-3 pt-6">
+                                <Button 
+                                    variant="ghost" 
+                                    onClick={() => { setSelectedTags([]); setSelectedModes([]); }} 
+                                    className="flex-1 rounded-2xl h-14 font-bold text-muted-foreground"
+                                >
+                                    リセット
+                                </Button>
+                                <DrawerClose asChild>
+                                    <Button className="flex-[2] rounded-2xl h-14 font-extrabold text-lg shadow-xl shadow-primary/20">
+                                        結果を表示 ({filteredRecipes.length})
+                                    </Button>
+                                </DrawerClose>
+                            </div>
+                        </div>
+                    </DrawerContent>
+                </Drawer>
+            </div>
+
+            {/* 3. Recipe Grid */}
             {recipes.length === 0 ? (
-                <div className="flex flex-col items-center justify-center p-12 text-center border-2 border-dashed rounded-3xl bg-muted/20">
-                    <p className="text-muted-foreground italic mb-4">No recipes found. Create one!</p>
-                    <Button onClick={onCreateNew} variant="secondary" className="gap-2 rounded-xl">
-                        <Plus className="w-4 h-4" />
-                        Add First Recipe
+                <div className="flex flex-col items-center justify-center p-20 text-center border-2 border-dashed rounded-[3rem] bg-muted/10 border-muted/40 animate-in zoom-in-95 duration-500">
+                    <div className="w-20 h-20 rounded-full bg-muted/20 flex items-center justify-center mb-6">
+                        <Utensils className="w-10 h-10 text-muted-foreground/40" />
+                    </div>
+                    <h3 className="text-xl font-bold mb-2">レシピがまだありません</h3>
+                    <p className="text-muted-foreground mb-8 max-w-xs">お気に入りのレシピを登録して、自分だけのデータベースを作りましょう。</p>
+                    <Button onClick={onCreateNew} size="lg" className="rounded-2xl h-16 px-8 font-extrabold text-lg shadow-xl shadow-primary/20">
+                        最初のレシピを追加
                     </Button>
                 </div>
             ) : filteredRecipes.length === 0 ? (
-                <div className="flex flex-col items-center justify-center p-12 text-center rounded-3xl bg-muted/10 border border-muted/30">
-                    <Search className="w-10 h-10 text-muted-foreground/30 mb-3" />
-                    <p className="text-muted-foreground font-semibold mb-1">No matches found</p>
-                    <p className="text-sm text-muted-foreground/80 mb-4">Try adjusting your filters or search terms.</p>
+                <div className="flex flex-col items-center justify-center p-20 text-center rounded-[3rem] bg-muted/5 border border-muted/20">
+                    <Search className="w-16 h-16 text-muted-foreground/20 mb-6" />
+                    <p className="text-xl font-bold mb-2">見つかりませんでした</p>
+                    <p className="text-muted-foreground mb-8">検索条件を変えてみてください。</p>
                     <Button 
-                        variant="outline" 
-                        onClick={() => {
-                            setSearchQuery("");
-                            setSelectedModes([]);
-                            setSelectedTags([]);
-                        }} 
-                        className="gap-2 rounded-full text-xs font-bold"
+                        variant="secondary" 
+                        onClick={() => { setSearchQuery(""); setSelectedModes([]); setSelectedTags([]); }} 
+                        className="rounded-2xl h-12 font-bold px-6"
                     >
-                        <X className="w-3.5 h-3.5" />
-                        Clear all filters
+                        フィルターをクリア
                     </Button>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {filteredRecipes.map((r) => {
                         const prepMin = parseISOToMinutes(r.prepTime || "");
                         const cookMin = parseISOToMinutes(r.cookTime || "");
@@ -287,42 +274,61 @@ export function RecipeList({ onSelectRecipe, onCreateNew }: { onSelectRecipe: (i
                             <Card
                                 key={r.id}
                                 onClick={() => r.id && onSelectRecipe(r.id)}
-                                className="group cursor-pointer hover:shadow-md transition-all active:scale-[0.98] border-muted overflow-hidden bg-card"
+                                className="group cursor-pointer rounded-[2.5rem] border-none bg-card hover:bg-muted/50 transition-all duration-300 active:scale-[0.97] overflow-hidden shadow-[0_10px_30px_-15px_rgba(0,0,0,0.05)] hover:shadow-[0_20px_40px_-20px_rgba(0,0,0,0.1)] ring-1 ring-border/40"
                             >
-                                <div className="px-3.5 py-2.5 flex flex-col justify-center">
-                                    <h3 className="text-[15px] font-bold leading-tight line-clamp-2 group-hover:text-primary transition-colors mb-1 flex items-start gap-1.5">
-                                        {r.cookingMode === 'MAKE_AHEAD' ? (
-                                            <CalendarClock className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-                                        ) : r.cookingMode === 'LUNCH' ? (
-                                            <Sun className="w-4 h-4 text-secondary-foreground mt-0.5 flex-shrink-0" />
-                                        ) : (
-                                            <Moon className="w-4 h-4 text-accent-foreground mt-0.5 flex-shrink-0" />
-                                        )}
-                                        <span>{r.name}</span>
-                                    </h3>
-                                    
-                                    {((prepMin > 0 || cookMin > 0) || (r.tags && r.tags.length > 0)) && (
-                                        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground w-full">
-                                            {(prepMin > 0 || cookMin > 0) && (
-                                                <div className="flex items-center gap-1">
-                                                    <Clock className="w-3 h-3 opacity-70" />
-                                                    <span className="font-semibold text-[10px] uppercase truncate max-w-[100px]">
-                                                        {prepMin > 0 ? `P:${prepMin}m ` : ''}
-                                                        {cookMin > 0 ? `C:${cookMin}m` : ''}
-                                                    </span>
-                                                </div>
-                                            )}
-                                            
-                                            {(r.tags && r.tags.length > 0) && (
-                                                <div className={cn("flex items-center gap-1 truncate max-w-[120px]", (prepMin > 0 || cookMin > 0) && "border-l pl-2 border-muted/50")}>
-                                                    <Tag className="w-3 h-3 opacity-70 flex-shrink-0" />
-                                                    <span className="font-semibold text-[10px] truncate">
-                                                        {r.tags.map(t => `#${t}`).join(', ')}
-                                                    </span>
+                                <div className="p-8 space-y-6">
+                                    <div className="flex justify-between items-start">
+                                        <Badge variant="outline" className={cn(
+                                            "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border-2",
+                                            r.cookingMode === 'MAKE_AHEAD' ? 'border-primary/40 text-primary bg-primary/5' :
+                                            r.cookingMode === 'LUNCH' ? 'border-secondary/60 text-secondary-foreground bg-secondary/10' :
+                                            'border-accent/60 text-accent-foreground bg-accent/10'
+                                        )}>
+                                            {r.cookingMode === 'MAKE_AHEAD' ? '作り置き' : r.cookingMode === 'LUNCH' ? 'お昼' : '晩ごはん'}
+                                        </Badge>
+                                        <div className="flex gap-1.5">
+                                            {r.images && r.images.length > 0 && (
+                                                <div className="flex -space-x-2">
+                                                    {r.images.slice(0, 3).map((img, idx) => (
+                                                        <div key={idx} className="w-6 h-6 rounded-full border-2 border-background bg-muted overflow-hidden">
+                                                            <img src={`/api/images/${img}`} className="w-full h-full object-cover" />
+                                                        </div>
+                                                    ))}
                                                 </div>
                                             )}
                                         </div>
-                                    )}
+                                    </div>
+
+                                    <h3 className="text-2xl font-black leading-tight tracking-tight group-hover:text-primary transition-colors duration-300">
+                                        {r.name}
+                                    </h3>
+                                    
+                                    <div className="flex flex-wrap items-center gap-4 pt-2 border-t border-border/40">
+                                        {(prepMin > 0 || cookMin > 0) && (
+                                            <div className="flex items-center gap-2 group/time">
+                                                <div className="p-1.5 rounded-lg bg-muted text-muted-foreground group-hover/time:bg-primary/10 group-hover/time:text-primary transition-colors">
+                                                    <Clock className="w-4 h-4" />
+                                                </div>
+                                                <span className="text-xs font-bold tracking-tight">
+                                                    {prepMin > 0 && `${prepMin}m `}
+                                                    {cookMin > 0 && `${cookMin}m`}
+                                                </span>
+                                            </div>
+                                        )}
+                                        
+                                        {r.tags && r.tags.length > 0 && (
+                                            <div className="flex items-center gap-2 overflow-hidden">
+                                                <div className="p-1.5 rounded-lg bg-muted text-muted-foreground">
+                                                    <Tag className="w-4 h-4" />
+                                                </div>
+                                                <div className="flex gap-1 overflow-hidden">
+                                                    {r.tags.map(t => (
+                                                        <span key={t} className="text-[10px] font-bold text-muted-foreground/60 whitespace-nowrap">#{t}</span>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </Card>
                         );
@@ -330,17 +336,29 @@ export function RecipeList({ onSelectRecipe, onCreateNew }: { onSelectRecipe: (i
                 </div>
             )}
             
-            {/* Mobile Export Button */}
-            {recipes.length > 0 && (
-                <div className="sm:hidden flex justify-center pt-8 pb-4">
-                    <Button variant="outline" asChild className="gap-2 rounded-full text-muted-foreground bg-background">
-                        <a href="/api/export" download>
-                            <Download className="w-4 h-4" />
-                            <span>Export All Recipes as JSON</span>
-                        </a>
-                    </Button>
-                </div>
-            )}
+            {/* Floating FAB for Mobile */}
+            <div className="fixed bottom-8 right-6 z-40 sm:hidden">
+                <Button 
+                    onClick={onCreateNew} 
+                    className="w-16 h-16 rounded-[2rem] shadow-2xl shadow-primary/40 p-0 flex items-center justify-center animate-in zoom-in-50 duration-500"
+                >
+                    <Plus className="w-8 h-8" />
+                </Button>
+            </div>
+
+            {/* Desktop Export & Add */}
+            <div className="hidden sm:flex justify-between items-center pt-10 border-t border-border/40">
+                <Button variant="ghost" asChild className="text-muted-foreground font-bold rounded-xl hover:bg-muted/50">
+                    <a href="/api/export" download>
+                        <Download className="w-4 h-4 mr-2" />
+                        JSON形式で全レシピを出力
+                    </a>
+                </Button>
+                <Button onClick={onCreateNew} size="lg" className="rounded-2xl h-14 px-8 font-extrabold shadow-xl shadow-primary/20">
+                    <Plus className="w-5 h-5 mr-2" />
+                    新しいレシピを作成
+                </Button>
+            </div>
         </div>
     );
 }

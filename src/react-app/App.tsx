@@ -26,20 +26,29 @@ function App() {
 	};
 
 	return (
-		<div className="min-h-screen bg-gray-100 text-gray-900 font-sans p-4 md:p-8">
-			<header className="max-w-4xl mx-auto mb-8">
-				<div>
-					<h1
-						className="text-4xl font-extrabold text-blue-800 tracking-tight cursor-pointer inline-block"
-						onClick={goToList}
-					>
-						Mame
-					</h1>
-					<p className="text-gray-500 mt-2">A standard-compliant recipe database.</p>
+		<div className="min-h-screen bg-background text-foreground font-sans selection:bg-primary/10">
+			<header className="sticky top-0 z-40 w-full bg-background/80 backdrop-blur-xl border-b border-border/40">
+				<div className="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
+					<div className="flex flex-col">
+						<h1
+							className="text-2xl font-black text-primary tracking-tighter cursor-pointer hover:opacity-80 transition-opacity flex items-center gap-2"
+							onClick={goToList}
+						>
+							<div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
+								<span className="text-primary-foreground text-lg leading-none">M</span>
+							</div>
+							Mame
+						</h1>
+					</div>
+					<div className="flex items-center gap-3">
+						<p className="hidden sm:block text-[10px] font-bold uppercase tracking-widest text-muted-foreground opacity-60">
+							Recipe Database
+						</p>
+					</div>
 				</div>
 			</header>
 
-			<main className="max-w-4xl mx-auto">
+			<main className="max-w-4xl mx-auto px-4 py-8 md:py-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
 				{view === "list" && (
 					<RecipeList
 						onSelectRecipe={goToDetail}
