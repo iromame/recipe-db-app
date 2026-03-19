@@ -23,22 +23,22 @@ export default defineConfig({
 		VitePWA({
 			registerType: 'autoUpdate',
 			manifest: {
-				name: 'Family Recipe Kitchen',
-				short_name: 'Recipes',
+				name: 'Mame',
+				short_name: 'Mame',
 				description: 'A standard-compliant recipe database.',
-				theme_color: '#1e3a8a', // blue-900 approx
+				theme_color: '#1e3a8a',
 				background_color: '#ffffff',
 				display: 'standalone',
 				icons: [
 					{
-						src: 'icons/icon-192x192.svg',
-						sizes: '192x192',
-						type: 'image/svg+xml'
+						src: 'favicon.png',
+						sizes: '1024x1024',
+						type: 'image/png'
 					},
 					{
-						src: 'icons/icon-512x512.svg',
-						sizes: '512x512',
-						type: 'image/svg+xml'
+						src: 'apple-touch-icon.png',
+						sizes: '1024x1024',
+						type: 'image/png'
 					}
 				]
 			}
