@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { drizzle } from "drizzle-orm/d1";
 import { eq, inArray, desc } from "drizzle-orm";
 import { recipes, tags, recipeTags } from "../db/schema";
+import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -224,6 +225,155 @@ app.post("/api/recipes/:id/images", async (c) => {
     }).where(eq(recipes.id, recipeId)).run();
 
     return c.json({ key });
+});
+
+// Extract Recipe with AI
+app.post("/api/recipes/extract", async (c) => {
+    const apiKey = (c.env as any).GEMINI_API_KEY;
+    if (!apiKey) return c.json({ error: "Gemini API key is not configured" }, 500);
+
+    const body = await c.req.parseBody();
+    const url = body["url"] as string;
+    const text = body["text"] as string;
+    const file = body["file"];
+
+    let extractedText = "";
+    let imageUrl = "";
+
+    try {
+        if (url) {
+            const res = await fetch(url, {
+                headers: {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+                    "Accept-Language": "ja,en-US;q=0.9,en;q=0.8",
+                    "Cache-Control": "max-age=0",
+                    "Sec-Ch-Ua": '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
+                    "Sec-Ch-Ua-Mobile": "?0",
+                    "Sec-Ch-Ua-Platform": '"Windows"',
+                    "Sec-Fetch-Dest": "document",
+                    "Sec-Fetch-Mode": "navigate",
+                    "Sec-Fetch-Site": "none",
+                    "Sec-Fetch-User": "?1",
+                    "Upgrade-Insecure-Requests": "1"
+                }
+            });
+            if (!res.ok) {
+                throw new Error(`Failed to fetch URL: ${res.status} (サイトがレシピの自動取得をブロックしている可能性があります。テキスト貼り付けをお試しください)`);
+            }
+            const html = await res.text();
+            extractedText = html;
+
+            const ogImageMatch1 = html.match(/<meta[^>]+(?:property|name)="(?:og:image|twitter:image)"[^>]+content="([^">]+)"/i);
+            const ogImageMatch2 = html.match(/<meta[^>]+content="([^">]+)"[^>]+(?:property|name)="(?:og:image|twitter:image)"/i);
+            if (ogImageMatch1 && ogImageMatch1[1]) {
+                imageUrl = ogImageMatch1[1];
+            } else if (ogImageMatch2 && ogImageMatch2[1]) {
+                imageUrl = ogImageMatch2[1];
+            }
+        } else if (text) {
+            extractedText = text;
+        } else if (file instanceof File) {
+            const arrayBuffer = await file.arrayBuffer();
+            const key = `uploads/${crypto.randomUUID()}-${file.name}`;
+            await c.env.IMAGES.put(key, arrayBuffer, {
+                httpMetadata: { contentType: file.type },
+            });
+            imageUrl = key; // Save only the key, it will be mapped correctly later
+            extractedText = "Please extract the recipe from this image.";
+        } else {
+            return c.json({ error: "No input provided" }, 400);
+        }
+
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+        const schema = {
+            type: SchemaType.OBJECT,
+            properties: {
+                name: { type: SchemaType.STRING, description: "レシピ名" },
+                description: { type: SchemaType.STRING, description: "簡単な説明文" },
+                prepTime: { type: SchemaType.STRING, description: "準備時間 (ISO 8601, 例: PT15M)" },
+                cookTime: { type: SchemaType.STRING, description: "調理時間 (ISO 8601, 例: PT20M)" },
+                cookingMode: { type: SchemaType.STRING, description: "用途（MAKE_AHEAD, LUNCH, DINNER のいずれかを選択）" },
+                tags: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING }, description: "タグの配列 (例: ['時短', 'レンジ', '鶏肉'])" },
+                recipeIngredient: {
+                    type: SchemaType.ARRAY,
+                    items: {
+                        type: SchemaType.OBJECT,
+                        properties: {
+                            name: { type: SchemaType.STRING, description: "材料名と分量 (例: 豚肉 200g)" }
+                        },
+                        required: ["name"]
+                    }
+                },
+                recipeInstructions: {
+                    type: SchemaType.ARRAY,
+                    items: {
+                        type: SchemaType.OBJECT,
+                        properties: {
+                            text: { type: SchemaType.STRING, description: "調理手順" }
+                        },
+                        required: ["text"]
+                    }
+                },
+                suitableForKids: {
+                    type: SchemaType.OBJECT,
+                    properties: {
+                        name: { type: SchemaType.STRING, description: "子供向けなら 'Infant' など" }
+                    }
+                }
+            },
+            required: ["name", "cookingMode"]
+        };
+
+        const prompt = `以下の内容からレシピ情報を抽出し、指定されたJSONスキーマに従って出力してください。可能な限り情報を補完し、ISO8601形式の時間は厳密に守ってください。\n\nContent:\n${extractedText}`;
+
+        const parts: any[] = [];
+        if (file instanceof File) {
+            const arrayBuffer = await file.arrayBuffer();
+            const buffer = new Uint8Array(arrayBuffer);
+            let binary = '';
+            for (let i = 0; i < buffer.byteLength; i++) {
+                binary += String.fromCharCode(buffer[i]);
+            }
+            parts.push({
+                inlineData: {
+                    data: btoa(binary),
+                    mimeType: file.type
+                }
+            });
+        }
+        parts.push({ text: prompt });
+
+        const result = await model.generateContent({
+            contents: [{ role: "user", parts }],
+            generationConfig: {
+                responseMimeType: "application/json",
+                responseSchema: schema as any,
+            }
+        });
+
+        const jsonText = result.response.text();
+        const extractedData = JSON.parse(jsonText);
+
+        if (imageUrl && !extractedData.images && !extractedData.imageUrl) {
+            // Provide as array to match frontend if we want, or as imageUrl for API
+            extractedData.imageUrl = (file instanceof File) ? `/api/images/${imageUrl}` : imageUrl;
+            // Also set images as array if it's an uploaded file
+            if (file instanceof File) {
+                 extractedData.images = [imageUrl];
+            }
+        }
+        if (url && !extractedData.url) {
+            extractedData.url = url;
+        }
+
+        return c.json({ success: true, data: extractedData });
+
+    } catch (e: any) {
+        return c.json({ error: e.message || "Failed to extract recipe" }, 500);
+    }
 });
 
 export default app;

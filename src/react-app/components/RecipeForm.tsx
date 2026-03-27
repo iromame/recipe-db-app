@@ -11,8 +11,8 @@ import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, Dr
 import { Plus, X, Clock, Utensils, Tag, ImageIcon, Link as LinkIcon, Check, Baby, ChevronLeft, Save, NotepadText } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export function RecipeForm({ id, onSave, onCancel }: { id?: string, onSave: (recipe: Recipe) => void, onCancel: () => void }) {
-	const [recipe, setRecipe] = useState<Partial<Recipe>>({
+export function RecipeForm({ id, initialData, onSave, onCancel }: { id?: string, initialData?: Partial<Recipe> | null, onSave: (recipe: Recipe) => void, onCancel: () => void }) {
+	const [recipe, setRecipe] = useState<Partial<Recipe>>(initialData || {
 		name: "",
 		cookingMode: "MAKE_AHEAD",
 		recipeCategory: "",
@@ -112,8 +112,18 @@ export function RecipeForm({ id, onSave, onCancel }: { id?: string, onSave: (rec
 					} catch (e) { console.error(e); }
 				}
 			}).finally(() => setLoading(false));
+		} else if (initialData) {
+			setRecipe(prev => ({ ...prev, ...initialData, cookingMode: initialData.cookingMode || "MAKE_AHEAD" }));
+			if (initialData.recipeIngredient) {
+				const ings = initialData.recipeIngredient;
+				setIngredientsText(Array.isArray(ings) ? ings.map((i: any) => i.name).join("\n") : "");
+			}
+			if (initialData.recipeInstructions) {
+				const insts = initialData.recipeInstructions;
+				setInstructionsText(Array.isArray(insts) ? insts.map((s: any) => s.text).join("\n\n") : "");
+			}
 		}
-	}, [id]);
+	}, [id, initialData]);
 
 	const addTag = (tagToAdd: string) => {
 		const tag = tagToAdd.trim().toLowerCase();

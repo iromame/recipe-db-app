@@ -7,10 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Drawer, DrawerClose, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
-import { Download, Plus, AlertCircle, Clock, Search, Filter, X, Tag, Utensils } from "lucide-react";
+import { Download, Plus, AlertCircle, Clock, Search, Filter, X, Tag, Utensils, Sparkles } from "lucide-react";
+import { RecipeImportDialog } from "./RecipeImportDialog";
 import { cn } from "@/lib/utils";
 
-export function RecipeList({ onSelectRecipe, onCreateNew }: { onSelectRecipe: (id: string) => void, onCreateNew: () => void }) {
+export function RecipeList({ onSelectRecipe, onCreateNew, onImportSuccess }: { onSelectRecipe: (id: string) => void, onCreateNew: () => void, onImportSuccess: (data: any) => void }) {
     const [recipes, setRecipes] = useState<Recipe[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -337,7 +338,15 @@ export function RecipeList({ onSelectRecipe, onCreateNew }: { onSelectRecipe: (i
             )}
             
             {/* Floating FAB for Mobile */}
-            <div className="fixed bottom-8 right-6 z-40 sm:hidden">
+            <div className="fixed bottom-8 right-6 z-40 sm:hidden flex flex-col gap-4">
+                <RecipeImportDialog onExtractionSuccess={onImportSuccess}>
+                    <Button 
+                        variant="secondary"
+                        className="w-14 h-14 rounded-[2rem] shadow-xl bg-primary/10 text-primary border-none hover:bg-primary/20 p-0 flex items-center justify-center animate-in zoom-in-50 duration-500 delay-100"
+                    >
+                        <Sparkles className="w-6 h-6" />
+                    </Button>
+                </RecipeImportDialog>
                 <Button 
                     onClick={onCreateNew} 
                     className="w-16 h-16 rounded-[2rem] shadow-2xl shadow-primary/40 p-0 flex items-center justify-center animate-in zoom-in-50 duration-500"
@@ -354,10 +363,17 @@ export function RecipeList({ onSelectRecipe, onCreateNew }: { onSelectRecipe: (i
                         JSON形式で全レシピを出力
                     </a>
                 </Button>
-                <Button onClick={onCreateNew} size="lg" className="rounded-2xl h-14 px-8 font-extrabold shadow-xl shadow-primary/20">
-                    <Plus className="w-5 h-5 mr-2" />
-                    新しいレシピを作成
-                </Button>
+                <div className="flex gap-3">
+                    <RecipeImportDialog onExtractionSuccess={onImportSuccess}>
+                        <Button variant="secondary" size="lg" className="rounded-2xl h-14 px-6 font-extrabold shadow-sm bg-primary/10 text-primary hover:bg-primary/20">
+                            <Sparkles className="w-5 h-5 mr-2" /> AI 取り込み
+                        </Button>
+                    </RecipeImportDialog>
+                    <Button onClick={onCreateNew} size="lg" className="rounded-2xl h-14 px-8 font-extrabold shadow-xl shadow-primary/20">
+                        <Plus className="w-5 h-5 mr-2" />
+                        新しいレシピを作成
+                    </Button>
+                </div>
             </div>
         </div>
     );

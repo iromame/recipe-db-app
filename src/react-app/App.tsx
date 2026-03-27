@@ -2,6 +2,7 @@ import { useState } from "react";
 import { RecipeList } from "./components/RecipeList";
 import { RecipeDetail } from "./components/RecipeDetail";
 import { RecipeForm } from "./components/RecipeForm";
+import { Recipe } from "./types/schema.org";
 import "./App.css";
 
 type ViewState = "list" | "detail" | "form";
@@ -9,19 +10,29 @@ type ViewState = "list" | "detail" | "form";
 function App() {
 	const [view, setView] = useState<ViewState>("list");
 	const [currentRecipeId, setCurrentRecipeId] = useState<string | null>(null);
+	const [importData, setImportData] = useState<Partial<Recipe> | null>(null);
 
 	const goToList = () => {
 		setCurrentRecipeId(null);
+		setImportData(null);
 		setView("list");
 	};
 
 	const goToDetail = (id: string) => {
 		setCurrentRecipeId(id);
+		setImportData(null);
 		setView("detail");
 	};
 
 	const goToForm = (id?: string) => {
 		setCurrentRecipeId(id || null);
+		setImportData(null);
+		setView("form");
+	};
+
+	const goToFormWithData = (data: Partial<Recipe>) => {
+		setCurrentRecipeId(null);
+		setImportData(data);
 		setView("form");
 	};
 
@@ -53,6 +64,7 @@ function App() {
 					<RecipeList
 						onSelectRecipe={goToDetail}
 						onCreateNew={() => goToForm()}
+						onImportSuccess={goToFormWithData}
 					/>
 				)}
 				{view === "detail" && currentRecipeId && (
@@ -66,6 +78,7 @@ function App() {
 				{view === "form" && (
 					<RecipeForm
 						id={currentRecipeId || undefined}
+						initialData={importData}
 						onSave={goToList}
 						onCancel={view === "form" && currentRecipeId ? () => goToDetail(currentRecipeId) : goToList}
 					/>

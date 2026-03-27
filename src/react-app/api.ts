@@ -17,7 +17,16 @@ const checkResponse = async (res: Response) => {
     }
 
     if (!res.ok) {
-        throw new Error(`API error (${res.status}): ${res.statusText}`);
+        let errorMsg = res.statusText;
+        try {
+            const errBody = await res.json();
+            if (errBody && errBody.error) {
+                errorMsg = errBody.error;
+            }
+        } catch (_) {
+            // Ignore parse errors for error objects
+        }
+        throw new Error(`API error (${res.status}): ${errorMsg}`);
     }
 
     try {
@@ -63,6 +72,13 @@ export const api = {
         const formData = new FormData();
         formData.append("file", file);
         const res = await fetch(`/api/recipes/${recipeId}/images`, {
+            method: "POST",
+            body: formData,
+        });
+        return checkResponse(res);
+    },
+    extractRecipe: async (formData: FormData): Promise<{ success: boolean; data: any }> => {
+        const res = await fetch("/api/recipes/extract", {
             method: "POST",
             body: formData,
         });

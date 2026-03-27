@@ -35,6 +35,22 @@ When you change Cloudflare bindings in `wrangler.json`, regenerate types:
 npm run cf-typegen
 ```
 
+### AI Recipe Extraction (Gemini API)
+This project uses Gemini API for parsing recipes from URLs, images, and text.
+
+#### Local Development
+1. Create a `.dev.vars` file in the project root.
+2. Add your Gemini API key:
+   ```env
+   GEMINI_API_KEY=your_api_key_here
+   ```
+
+#### Production Deployment
+Set the API key as a Cloudflare Worker secret:
+```bash
+npx wrangler secret put GEMINI_API_KEY
+```
+
 ## Production Deployment
 
 Latest code must be built before deployment to reflect changes (especially CSS/Frontend):
