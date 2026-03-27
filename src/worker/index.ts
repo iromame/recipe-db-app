@@ -296,7 +296,6 @@ app.post("/api/recipes/extract", async (c) => {
                 prepTime: { type: SchemaType.STRING, description: "準備時間 (ISO 8601, 例: PT15M)" },
                 cookTime: { type: SchemaType.STRING, description: "調理時間 (ISO 8601, 例: PT20M)" },
                 cookingMode: { type: SchemaType.STRING, description: "用途（MAKE_AHEAD, LUNCH, DINNER のいずれかを選択）" },
-                tags: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING }, description: "タグの配列 (例: ['時短', 'レンジ', '鶏肉'])" },
                 recipeIngredient: {
                     type: SchemaType.ARRAY,
                     items: {
