@@ -4,7 +4,7 @@ import { Recipe } from "../types/schema.org";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import { ChevronLeft, Edit, Trash2, Sun, ExternalLink, Clock, Utensils, Tag, NotepadText, Copy, Check } from "lucide-react";
+import { ChevronLeft, Edit, Trash2, Sun, ExternalLink, Clock, Utensils, Tag, NotepadText, Copy, Check, Share } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 function CopyButton({ text, label }: { text: string, label?: string }) {
@@ -89,6 +89,30 @@ export function RecipeDetail({ id, onBack, onEdit, onDelete }: { id: string, onB
         }
     };
 
+    const handleShare = async () => {
+        if (!recipe) return;
+        const shareData = {
+            title: `${recipe.name} - Mame`,
+            url: window.location.href,
+        };
+
+        try {
+            if (navigator.share) {
+                await navigator.share(shareData);
+            } else {
+                await navigator.clipboard.writeText(shareData.url);
+                alert("リンクをコピーしました");
+            }
+        } catch (err: any) {
+            console.error("Error sharing:", err);
+            // Ignore AbortError which happens if user cancels the share dialog
+            if (err.name !== 'AbortError') {
+                await navigator.clipboard.writeText(shareData.url).catch(() => {});
+                alert("リンクをコピーしました");
+            }
+        }
+    };
+
     const parseJson = (val: any) => {
         try {
             if (typeof val === "string") {
@@ -141,10 +165,13 @@ export function RecipeDetail({ id, onBack, onEdit, onDelete }: { id: string, onB
 						<span>戻る</span>
 					</Button>
 					<div className="flex gap-1.5">
-						<Button variant="ghost" size="icon" onClick={() => onEdit(id)} className="rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all">
+						<Button variant="ghost" size="icon" onClick={handleShare} className="rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all" title="レシピを共有">
+							<Share className="w-5 h-5" />
+						</Button>
+						<Button variant="ghost" size="icon" onClick={() => onEdit(id)} className="rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all" title="編集">
 							<Edit className="w-5 h-5" />
 						</Button>
-						<Button variant="ghost" size="icon" onClick={handleDelete} className="rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-all">
+						<Button variant="ghost" size="icon" onClick={handleDelete} className="rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-all" title="削除">
 							<Trash2 className="w-5 h-5" />
 						</Button>
 					</div>
