@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { RecipeList } from "./components/RecipeList";
 import { RecipeDetail } from "./components/RecipeDetail";
 import { RecipeForm } from "./components/RecipeForm";
@@ -8,17 +8,48 @@ import "./App.css";
 type ViewState = "list" | "detail" | "form";
 
 function App() {
-	const [view, setView] = useState<ViewState>("list");
-	const [currentRecipeId, setCurrentRecipeId] = useState<string | null>(null);
+	const [view, setView] = useState<ViewState>(() => {
+		const params = new URLSearchParams(window.location.search);
+		return params.get("id") ? "detail" : "list";
+	});
+	const [currentRecipeId, setCurrentRecipeId] = useState<string | null>(() => {
+		const params = new URLSearchParams(window.location.search);
+		return params.get("id");
+	});
 	const [importData, setImportData] = useState<Partial<Recipe> | null>(null);
 
+	useEffect(() => {
+		const handlePopState = () => {
+			const params = new URLSearchParams(window.location.search);
+			const id = params.get("id");
+			if (id) {
+				setCurrentRecipeId(id);
+				setImportData(null);
+				setView("detail");
+			} else {
+				setCurrentRecipeId(null);
+				setImportData(null);
+				setView("list");
+			}
+		};
+		window.addEventListener("popstate", handlePopState);
+		return () => window.removeEventListener("popstate", handlePopState);
+	}, []);
+
 	const goToList = () => {
+		if (window.location.search !== "") {
+			window.history.pushState({}, "", window.location.pathname);
+		}
 		setCurrentRecipeId(null);
 		setImportData(null);
 		setView("list");
 	};
 
 	const goToDetail = (id: string) => {
+		const newUrl = `${window.location.pathname}?id=${id}`;
+		if (window.location.search !== `?id=${id}`) {
+			window.history.pushState({}, "", newUrl);
+		}
 		setCurrentRecipeId(id);
 		setImportData(null);
 		setView("detail");

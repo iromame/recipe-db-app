@@ -4,7 +4,7 @@ import { Recipe } from "../types/schema.org";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import { ChevronLeft, Edit, Trash2, Sun, ExternalLink, Clock, Utensils, Tag, NotepadText, Copy, Check, Share } from "lucide-react";
+import { ChevronLeft, Edit, Trash2, Sun, ExternalLink, Clock, Utensils, Tag, NotepadText, Copy, Check, Share2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 function CopyButton({ text, label }: { text: string, label?: string }) {
@@ -166,7 +166,7 @@ export function RecipeDetail({ id, onBack, onEdit, onDelete }: { id: string, onB
 					</Button>
 					<div className="flex gap-1.5">
 						<Button variant="ghost" size="icon" onClick={handleShare} className="rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all" title="レシピを共有">
-							<Share className="w-5 h-5" />
+							<Share2 className="w-5 h-5" />
 						</Button>
 						<Button variant="ghost" size="icon" onClick={() => onEdit(id)} className="rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all" title="編集">
 							<Edit className="w-5 h-5" />
