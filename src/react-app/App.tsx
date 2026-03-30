@@ -1,8 +1,18 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { RecipeList } from "./components/RecipeList";
 import { RecipeDetail } from "./components/RecipeDetail";
 import { RecipeForm } from "./components/RecipeForm";
 import { Recipe } from "./types/schema.org";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import "./App.css";
 
 type ViewState = "list" | "detail" | "form";
@@ -17,9 +27,13 @@ function App() {
 		return params.get("id");
 	});
 	const [importData, setImportData] = useState<Partial<Recipe> | null>(null);
+	const [isFormDirty, setIsFormDirty] = useState(false);
+	const [showDiscardDialog, setShowDiscardDialog] = useState(false);
+	const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
+	const currentUrlRef = useRef(window.location.href);
 
 	useEffect(() => {
-		const handlePopState = () => {
+		const processNavigation = () => {
 			const params = new URLSearchParams(window.location.search);
 			const id = params.get("id");
 			if (id) {
@@ -31,40 +45,84 @@ function App() {
 				setImportData(null);
 				setView("list");
 			}
+			currentUrlRef.current = window.location.href;
+		};
+
+		const handlePopState = () => {
+			if (isFormDirty) {
+				// Revert URL to where we were (on the form)
+				const targetUrl = window.location.href;
+				window.history.pushState(null, "", currentUrlRef.current);
+				
+				setPendingAction(() => () => {
+					// After confirmation, go to the target URL
+					window.history.replaceState(null, "", targetUrl);
+					processNavigation();
+				});
+				setShowDiscardDialog(true);
+				return;
+			}
+			processNavigation();
 		};
 		window.addEventListener("popstate", handlePopState);
 		return () => window.removeEventListener("popstate", handlePopState);
-	}, []);
+	}, [isFormDirty]);
 
-	const goToList = () => {
-		if (window.location.search !== "") {
-			window.history.pushState({}, "", window.location.pathname);
+	const handleSafeNavigation = (action: () => void, force = false) => {
+		if (isFormDirty && !force) {
+			setPendingAction(() => action);
+			setShowDiscardDialog(true);
+		} else {
+			action();
 		}
-		setCurrentRecipeId(null);
-		setImportData(null);
-		setView("list");
 	};
 
-	const goToDetail = (id: string) => {
-		const newUrl = `${window.location.pathname}?id=${id}`;
-		if (window.location.search !== `?id=${id}`) {
-			window.history.pushState({}, "", newUrl);
-		}
-		setCurrentRecipeId(id);
-		setImportData(null);
-		setView("detail");
+	const goToList = (force = false) => {
+		handleSafeNavigation(() => {
+			if (window.location.search !== "") {
+				window.history.pushState({}, "", window.location.pathname);
+			}
+			setCurrentRecipeId(null);
+			setImportData(null);
+			setIsFormDirty(false);
+			setView("list");
+			currentUrlRef.current = window.location.href;
+		}, force);
+	};
+
+	const goToDetail = (id: string, force = false) => {
+		handleSafeNavigation(() => {
+			const newUrl = `${window.location.pathname}?id=${id}`;
+			if (window.location.search !== `?id=${id}`) {
+				window.history.pushState({}, "", newUrl);
+			}
+			setCurrentRecipeId(id);
+			setImportData(null);
+			setIsFormDirty(false);
+			setView("detail");
+			currentUrlRef.current = window.location.href;
+		}, force);
 	};
 
 	const goToForm = (id?: string) => {
-		setCurrentRecipeId(id || null);
-		setImportData(null);
-		setView("form");
+		// Navigation to form doesn't need force usually, but let's keep it consistent
+		handleSafeNavigation(() => {
+			setCurrentRecipeId(id || null);
+			setImportData(null);
+			setIsFormDirty(false);
+			setView("form");
+			currentUrlRef.current = window.location.href;
+		});
 	};
 
 	const goToFormWithData = (data: Partial<Recipe>) => {
-		setCurrentRecipeId(null);
-		setImportData(data);
-		setView("form");
+		handleSafeNavigation(() => {
+			setCurrentRecipeId(null);
+			setImportData(data);
+			setIsFormDirty(false);
+			setView("form");
+			currentUrlRef.current = window.location.href;
+		});
 	};
 
 	return (
@@ -74,7 +132,7 @@ function App() {
 					<div className="flex flex-col">
 						<h1
 							className="text-2xl font-black text-primary tracking-tighter cursor-pointer hover:opacity-80 transition-opacity flex items-center gap-2"
-							onClick={goToList}
+							onClick={() => goToList()}
 						>
 							<div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
 								<span className="text-primary-foreground text-lg leading-none">M</span>
@@ -101,20 +159,58 @@ function App() {
 				{view === "detail" && currentRecipeId && (
 					<RecipeDetail
 						id={currentRecipeId}
-						onBack={goToList}
+						onBack={() => goToList()}
 						onEdit={goToForm}
-						onDelete={goToList}
+						onDelete={() => goToList(true)}
 					/>
 				)}
 				{view === "form" && (
 					<RecipeForm
 						id={currentRecipeId || undefined}
 						initialData={importData}
-						onSave={goToList}
-						onCancel={view === "form" && currentRecipeId ? () => goToDetail(currentRecipeId) : goToList}
+						onSave={(_recipe) => {
+							// Using true to bypass the dirty check during save
+							goToList(true);
+						}}
+						onCancel={() => {
+							if (view === "form" && currentRecipeId) {
+								goToDetail(currentRecipeId);
+							} else {
+								goToList();
+							}
+						}}
+						onDirtyStateChange={setIsFormDirty}
 					/>
 				)}
 			</main>
+
+			<AlertDialog open={showDiscardDialog} onOpenChange={setShowDiscardDialog}>
+				<AlertDialogContent className="rounded-[2rem] border-none bg-background/95 backdrop-blur-3xl shadow-2xl">
+					<AlertDialogHeader className="space-y-4">
+						<AlertDialogTitle className="text-2xl font-black tracking-tight">変更を破棄しますか？</AlertDialogTitle>
+						<AlertDialogDescription className="text-muted-foreground font-bold">
+							編集中の内容が保存されていません。このまま閉じると変更は失われます。
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter className="mt-8 gap-3">
+						<AlertDialogCancel className="h-14 rounded-full font-black tracking-widest border-border/40 hover:bg-muted">
+							キャンセル
+						</AlertDialogCancel>
+						<AlertDialogAction
+							onClick={() => {
+								if (pendingAction) {
+									setIsFormDirty(false); // Reset before executing action
+									pendingAction();
+									setPendingAction(null);
+								}
+							}}
+							className="h-14 rounded-full font-black tracking-widest bg-destructive text-destructive-foreground hover:bg-destructive/90"
+						>
+							破棄する
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 		</div>
 	);
 }

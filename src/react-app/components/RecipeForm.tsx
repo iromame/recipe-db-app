@@ -11,7 +11,13 @@ import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, Dr
 import { Plus, X, Clock, Utensils, Tag, ImageIcon, Link as LinkIcon, Check, Baby, ChevronLeft, Save, NotepadText } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export function RecipeForm({ id, initialData, onSave, onCancel }: { id?: string, initialData?: Partial<Recipe> | null, onSave: (recipe: Recipe) => void, onCancel: () => void }) {
+export function RecipeForm({ id, initialData, onSave, onCancel, onDirtyStateChange }: { 
+	id?: string, 
+	initialData?: Partial<Recipe> | null, 
+	onSave: (recipe: Recipe) => void, 
+	onCancel: () => void,
+	onDirtyStateChange?: (isDirty: boolean) => void
+}) {
 	const [recipe, setRecipe] = useState<Partial<Recipe>>(initialData || {
 		name: "",
 		cookingMode: "MAKE_AHEAD",
@@ -32,6 +38,46 @@ export function RecipeForm({ id, initialData, onSave, onCancel }: { id?: string,
 	const [instructionsText, setInstructionsText] = useState("");
 	const [loading, setLoading] = useState(false);
 	const [uploading, setUploading] = useState(false);
+	const initialStateRef = useRef<string>("");
+	const [isDirty, setIsDirty] = useState(false);
+
+	const getFormState = () => JSON.stringify({
+		name: recipe.name || "",
+		cookingMode: recipe.cookingMode || "MAKE_AHEAD",
+		recipeCategory: recipe.recipeCategory || "",
+		tags: [...(recipe.tags || [])].sort(),
+		prepTime: recipe.prepTime || "",
+		cookTime: recipe.cookTime || "",
+		url: recipe.url || "",
+		images: [...(recipe.images || [])],
+		notes: recipe.notes || "",
+		suitableForKids: recipe.suitableForKids ? JSON.stringify(recipe.suitableForKids) : undefined,
+		ingredientsText: ingredientsText.trim(),
+		instructionsText: instructionsText.trim(),
+	});
+
+	useEffect(() => {
+		if (!loading) {
+			const current = getFormState();
+			if (!initialStateRef.current) {
+				initialStateRef.current = current;
+			}
+			const dirty = current !== initialStateRef.current;
+			setIsDirty(dirty);
+			onDirtyStateChange?.(dirty);
+		}
+	}, [recipe, ingredientsText, instructionsText, loading]);
+
+	useEffect(() => {
+		const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+			if (isDirty) {
+				e.preventDefault();
+				e.returnValue = "";
+			}
+		};
+		window.addEventListener("beforeunload", handleBeforeUnload);
+		return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+	}, [isDirty]);
 
 	const resizeImage = (file: File): Promise<Blob> => {
 		return new Promise((resolve, reject) => {
