@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
-import { Plus, X, Clock, Utensils, Tag, ImageIcon, Link as LinkIcon, Check, Baby, ChevronLeft, Save, NotepadText } from "lucide-react";
+import { Plus, Minus, Scale, X, Clock, Utensils, Tag, ImageIcon, Link as LinkIcon, Check, Baby, ChevronLeft, Save, NotepadText } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function RecipeForm({ id, initialData, onSave, onCancel, onDirtyStateChange }: { 
@@ -29,6 +29,7 @@ export function RecipeForm({ id, initialData, onSave, onCancel, onDirtyStateChan
 		images: [],
 		notes: "",
 		suitableForKids: undefined,
+		recipeYield: undefined,
 	});
 	const [tagInput, setTagInput] = useState("");
 	const [allTags, setAllTags] = useState<string[]>([]);
@@ -52,6 +53,7 @@ export function RecipeForm({ id, initialData, onSave, onCancel, onDirtyStateChan
 		images: [...(recipe.images || [])],
 		notes: recipe.notes || "",
 		suitableForKids: recipe.suitableForKids ? JSON.stringify(recipe.suitableForKids) : undefined,
+		recipeYield: recipe.recipeYield ? JSON.stringify(recipe.recipeYield) : undefined,
 		ingredientsText: ingredientsText.trim(),
 		instructionsText: instructionsText.trim(),
 	});
@@ -157,6 +159,9 @@ export function RecipeForm({ id, initialData, onSave, onCancel, onDirtyStateChan
 						setInstructionsText(insts.map((s: any) => s.text).join("\n\n"));
 					} catch (e) { console.error(e); }
 				}
+				if (typeof r.recipeYield === "string") {
+					try { setRecipe(prev => ({ ...prev, recipeYield: JSON.parse(r.recipeYield as any) })); } catch (e) { console.error(e); }
+				}
 			}).finally(() => setLoading(false));
 		} else if (initialData) {
 			setRecipe(prev => ({ ...prev, ...initialData, cookingMode: initialData.cookingMode || "MAKE_AHEAD" }));
@@ -167,6 +172,9 @@ export function RecipeForm({ id, initialData, onSave, onCancel, onDirtyStateChan
 			if (initialData.recipeInstructions) {
 				const insts = initialData.recipeInstructions;
 				setInstructionsText(Array.isArray(insts) ? insts.map((s: any) => s.text).join("\n\n") : "");
+			}
+			if (typeof initialData.recipeYield === "string") {
+				try { setRecipe(prev => ({ ...prev, recipeYield: JSON.parse(initialData.recipeYield as any) })); } catch (e) { console.error(e); }
 			}
 		}
 	}, [id, initialData]);
@@ -201,6 +209,7 @@ export function RecipeForm({ id, initialData, onSave, onCancel, onDirtyStateChan
 			prepTime: recipe.prepTime,
 			cookTime: recipe.cookTime,
 			suitableForKids: recipe.suitableForKids,
+			recipeYield: recipe.recipeYield,
 			url: recipe.url,
 			images: recipe.images,
 			recipeIngredient: ingredientsText.split("\n").filter(l => l.trim()).map(name => ({ name })),
@@ -272,6 +281,86 @@ export function RecipeForm({ id, initialData, onSave, onCancel, onDirtyStateChan
 								)}
 							>
 								{m}分
+							</button>
+						))}
+					</div>
+				</div>
+			</div>
+		);
+	};
+
+	const YieldPicker = () => {
+		const yieldVal = recipe.recipeYield?.value || 0;
+		const yieldUnit = recipe.recipeYield?.unit || "L";
+		const units = ["L", "食分", "個", "g"];
+		
+		const updateYield = (val: number | string, un: string) => {
+			const num = typeof val === 'string' ? parseFloat(val) : val;
+			if (isNaN(num)) {
+				setRecipe(prev => ({ ...prev, recipeYield: { value: 0, unit: un } }));
+			} else {
+				// Round to 1 decimal place to prevent floating point issues
+				const rounded = Math.round(Math.max(0, num) * 10) / 10;
+				setRecipe(prev => ({ ...prev, recipeYield: { value: rounded, unit: un } }));
+			}
+		};
+
+		const activeOptions = yieldUnit === "L" ? [0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0] :
+		                      yieldUnit === "g" ? [50, 100, 150, 200, 250, 300, 400, 500] :
+		                      [1, 2, 3, 4, 5, 8, 10];
+
+		return (
+			<div className="space-y-6">
+				<div className="flex items-center gap-2 text-muted-foreground/60">
+					<Scale className="w-4 h-4" />
+					<span className="text-[10px] font-black uppercase tracking-[0.2em]">仕上がり量</span>
+				</div>
+				
+				<div className="space-y-5">
+					{/* Hybrid Row */}
+					<div className="flex flex-wrap items-center gap-4">
+						<Input
+							type="number"
+							step={yieldUnit === "L" ? "0.1" : yieldUnit === "g" ? "10" : "1"}
+							min="0"
+							value={yieldVal || ""}
+							onChange={e => updateYield(e.target.value, yieldUnit)}
+							className="w-32 h-16 text-3xl font-black text-center bg-muted/20 border-border/40 rounded-[1.5rem] focus-visible:ring-2 focus-visible:ring-primary/20 shadow-inner p-0"
+						/>
+						<div className="flex items-center bg-muted/30 p-1.5 rounded-full border border-border/20 shadow-inner">
+							{units.map(u => (
+								<button
+									key={u}
+									type="button"
+									onClick={() => updateYield(yieldVal, u)}
+									className={cn(
+										"px-4 py-2.5 rounded-full text-[11px] font-black uppercase tracking-widest border transition-all active:scale-95",
+										yieldUnit === u
+											? "bg-primary text-primary-foreground border-transparent shadow-md"
+											: "bg-transparent text-muted-foreground/60 border-transparent hover:text-foreground"
+									)}
+								>
+									{u}
+								</button>
+							))}
+						</div>
+					</div>
+
+					{/* Quick Chips (Wrapped) */}
+					<div className="flex flex-wrap gap-2.5">
+						{activeOptions.map(m => (
+							<button
+								key={m}
+								type="button"
+								onClick={() => updateYield(m, yieldUnit)}
+								className={cn(
+									"px-6 py-3 rounded-[1.25rem] text-[15px] font-black uppercase border-2 transition-all active:scale-95 shadow-sm",
+									yieldVal === m
+										? "bg-primary/10 text-primary border-primary/30 scale-105"
+										: "bg-background text-muted-foreground/80 border-border/40 hover:border-muted-foreground/30 hover:bg-muted/20"
+								)}
+							>
+								{yieldUnit === "L" ? m.toFixed(1) : m}
 							</button>
 						))}
 					</div>
@@ -493,6 +582,8 @@ export function RecipeForm({ id, initialData, onSave, onCancel, onDirtyStateChan
 
 				{/* 5. Content Section (Large Text Areas) */}
 				<section className="space-y-12">
+					<YieldPicker />
+					
 					<div className="space-y-4">
 						<div className="flex items-center justify-between">
 							<div className="flex items-center gap-2 text-muted-foreground/60">

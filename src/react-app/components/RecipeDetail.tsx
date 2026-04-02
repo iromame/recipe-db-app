@@ -4,7 +4,7 @@ import { Recipe } from "../types/schema.org";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import { ChevronLeft, Edit, Trash2, Sun, ExternalLink, Clock, Utensils, Tag, NotepadText, Copy, Check, Share2 } from "lucide-react";
+import { ChevronLeft, Edit, Trash2, Sun, ExternalLink, Clock, Utensils, Tag, NotepadText, Copy, Check, Share2, Scale } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 function CopyButton({ text, label }: { text: string, label?: string }) {
@@ -128,6 +128,7 @@ export function RecipeDetail({ id, onBack, onEdit, onDelete }: { id: string, onB
 
     const ingredients = parseJson(recipe?.recipeIngredient);
     const instructions = parseJson(recipe?.recipeInstructions);
+    const yieldData = parseJson(recipe?.recipeYield);
 
     if (loading) return <div className="p-12 text-center animate-pulse text-muted-foreground">Loading recipe details...</div>;
     if (!recipe) return <div className="p-12 text-center text-destructive font-bold">Recipe not found.</div>;
@@ -259,8 +260,19 @@ export function RecipeDetail({ id, onBack, onEdit, onDelete }: { id: string, onB
 						</div>
 						<p className="text-lg md:text-xl font-black">{cookMin > 0 ? `${cookMin} 分` : "--"}</p>
 					</div>
+					{yieldData && (
+						<div className="space-y-1 md:space-y-2 border-l pl-4 md:pl-6 border-border/40">
+							<div className="flex items-center gap-1.5 md:gap-2 text-muted-foreground/60">
+								<Scale className="w-3 md:w-4 h-3 md:h-4" />
+								<span className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em]">仕上がり量</span>
+							</div>
+							<p className="text-lg md:text-xl font-black">
+								{yieldData.unit === "L" ? Number(yieldData.value).toFixed(1) : yieldData.value} <span className="text-sm">{yieldData.unit}</span>
+							</p>
+						</div>
+					)}
 					{recipe.url && (
-						<div className="col-span-2 space-y-1 md:space-y-2 border-l sm:pl-4 md:pl-6 border-border/40 mt-4 sm:mt-0 pt-4 sm:pt-0 border-t sm:border-t-0">
+						<div className={cn("space-y-1 md:space-y-2 border-l sm:pl-4 md:pl-6 border-border/40 mt-4 sm:mt-0 pt-4 sm:pt-0 border-t sm:border-t-0", yieldData ? "col-span-1" : "col-span-2")}>
 							<div className="flex items-center gap-1.5 md:gap-2 text-muted-foreground/60">
 								<ExternalLink className="w-3 md:w-4 h-3 md:h-4" />
 								<span className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em]">出典</span>
