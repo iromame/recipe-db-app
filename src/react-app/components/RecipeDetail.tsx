@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext, type CarouselApi } from "@/components/ui/carousel";
-import { ChevronLeft, Edit, Trash2, Sun, ExternalLink, Clock, Utensils, Tag, NotepadText, Copy, Check, Share2, Scale, Pin } from "lucide-react";
+import { ChevronLeft, Edit, Trash2, Sun, ExternalLink, Clock, Utensils, Tag, NotepadText, Copy, Check, Share2, Scale, Pin, ListPlus } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useCookingStore } from "../store/useCookingStore";
 
 function CopyButton({ text, label }: { text: string, label?: string }) {
     const [copied, setCopied] = useState(false);
@@ -38,6 +39,9 @@ export function RecipeDetail({ id, onBack, onEdit, onDelete }: { id: string, onB
     const [current, setCurrent] = useState(0);
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [isOpen, setIsOpen] = useState(false);
+    const [isAddingToQueue, setIsAddingToQueue] = useState(false);
+    const [addedToast, setAddedToast] = useState(false);
+    const { addSession } = useCookingStore();
 
     useEffect(() => {
         if (!carouselApi) return;
@@ -136,6 +140,29 @@ export function RecipeDetail({ id, onBack, onEdit, onDelete }: { id: string, onB
                 await navigator.clipboard.writeText(shareData.url).catch(() => {});
                 alert("リンクをコピーしました");
             }
+        }
+    };
+
+    const handleAddToCookingList = async () => {
+        if (!recipe) return;
+        setIsAddingToQueue(true);
+        try {
+            // Log to DB
+            await api.trackCookingHistory(id);
+            // Add to Local Storage
+            addSession({
+                recipeId: id,
+                recipeName: recipe.name,
+                imageUrl: recipe.images && recipe.images.length > 0 ? recipe.images[0] : undefined
+            });
+            // Show toast/success
+            setAddedToast(true);
+            setTimeout(() => setAddedToast(false), 3000);
+        } catch (err) {
+            console.error("Failed to add to cooking list", err);
+            alert("調理リストへの追加に失敗しました");
+        } finally {
+            setIsAddingToQueue(false);
         }
     };
 
@@ -436,6 +463,28 @@ export function RecipeDetail({ id, onBack, onEdit, onDelete }: { id: string, onB
 					</div>
 				</div>
 			</div>
+
+            {/* Floating Action Button for Cooking Queue */}
+            <div className="fixed bottom-6 right-6 md:bottom-8 md:right-8 z-50 flex flex-col items-end gap-3 pointer-events-none">
+                {addedToast && (
+                    <div className="bg-foreground text-background px-4 py-2 rounded-xl text-sm font-bold shadow-2xl animate-in slide-in-from-bottom-2 fade-in duration-300 pointer-events-auto">
+                        調理リストに追加しました
+                    </div>
+                )}
+                <Button 
+                    size="lg" 
+                    onClick={handleAddToCookingList} 
+                    disabled={isAddingToQueue}
+                    className="h-14 px-6 rounded-full shadow-xl shadow-primary/25 bg-primary text-primary-foreground hover:bg-primary/90 font-black tracking-widest gap-2 pointer-events-auto"
+                >
+                    {isAddingToQueue ? (
+                        <div className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                        <ListPlus className="w-5 h-5" />
+                    )}
+                    <span>調理する</span>
+                </Button>
+            </div>
 		</div>
 	);
 }

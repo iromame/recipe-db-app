@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { drizzle } from "drizzle-orm/d1";
 import { eq, inArray, desc } from "drizzle-orm";
-import { recipes, tags, recipeTags } from "../db/schema";
+import { recipes, tags, recipeTags, cookingEvents } from "../db/schema";
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 
 const app = new Hono<{ Bindings: Env }>();
@@ -375,6 +375,41 @@ app.post("/api/recipes/extract", async (c) => {
     } catch (e: any) {
         return c.json({ error: e.message || "Failed to extract recipe" }, 500);
     }
+});
+
+// Cooking History Log
+app.post("/api/cooking-history", async (c) => {
+    const db = drizzle(c.env.recipe_db);
+    const body = await c.req.json();
+    const recipeId = body.recipeId;
+
+    if (!recipeId) return c.json({ error: "recipeId is required" }, 400);
+
+    const newId = crypto.randomUUID();
+    await db.insert(cookingEvents).values({
+        id: newId,
+        recipeId,
+        createdAt: new Date(),
+    }).run();
+
+    return c.json({ success: true, id: newId }, 201);
+});
+
+app.get("/api/cooking-history", async (c) => {
+    const db = drizzle(c.env.recipe_db);
+    const history = await db.select({
+        id: cookingEvents.id,
+        recipeId: cookingEvents.recipeId,
+        createdAt: cookingEvents.createdAt,
+        recipeName: recipes.name,
+    })
+    .from(cookingEvents)
+    .innerJoin(recipes, eq(cookingEvents.recipeId, recipes.id))
+    .orderBy(desc(cookingEvents.createdAt))
+    .limit(50)
+    .all();
+
+    return c.json(history);
 });
 
 export default app;

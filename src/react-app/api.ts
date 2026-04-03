@@ -84,4 +84,12 @@ export const api = {
         });
         return checkResponse(res);
     },
+    trackCookingHistory: async (recipeId: string): Promise<{ success: boolean; id: string }> => {
+        const res = await fetch("/api/cooking-history", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ recipeId }),
+        });
+        return checkResponse(res);
+    },
 };

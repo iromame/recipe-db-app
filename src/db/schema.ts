@@ -39,3 +39,13 @@ export const recipeTags = sqliteTable("recipe_tags", {
 }, (t) => ({
     pk: primaryKey({ columns: [t.recipeId, t.tagId] }),
 }));
+
+export const cookingEvents = sqliteTable("cooking_events", {
+    id: text("id").primaryKey(),
+    recipeId: text("recipe_id")
+        .notNull()
+        .references(() => recipes.id, { onDelete: "cascade" }),
+    createdAt: integer("created_at", { mode: "timestamp" })
+        .notNull()
+        .default(new Date()),
+});

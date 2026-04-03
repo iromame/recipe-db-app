@@ -2,6 +2,11 @@ import { useState, useEffect, useRef } from "react";
 import { RecipeList } from "./components/RecipeList";
 import { RecipeDetail } from "./components/RecipeDetail";
 import { RecipeForm } from "./components/RecipeForm";
+import { CookingQueue } from "./components/CookingQueue";
+import { CookingDetail } from "./components/CookingDetail";
+import { useCookingStore } from "./store/useCookingStore";
+import { Utensils } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Recipe } from "./types/schema.org";
 import {
 	AlertDialog,
@@ -15,7 +20,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import "./App.css";
 
-type ViewState = "list" | "detail" | "form";
+type ViewState = "list" | "detail" | "form" | "cookingQueue" | "cookingDetail";
 
 function App() {
 	const [view, setView] = useState<ViewState>(() => {
@@ -30,13 +35,22 @@ function App() {
 	const [isFormDirty, setIsFormDirty] = useState(false);
 	const [showDiscardDialog, setShowDiscardDialog] = useState(false);
 	const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
+    const { activeSessions } = useCookingStore();
 	const currentUrlRef = useRef(window.location.href);
 
 	useEffect(() => {
 		const processNavigation = () => {
 			const params = new URLSearchParams(window.location.search);
 			const id = params.get("id");
-			if (id) {
+            const viewParam = params.get("view");
+            const sessionId = params.get("sessionId");
+
+            if (viewParam === "cookingQueue") {
+                setView("cookingQueue");
+            } else if (viewParam === "cookingDetail" && sessionId) {
+                setCurrentRecipeId(sessionId); // using currentRecipeId as sessionId in this mode
+                setView("cookingDetail");
+            } else if (id) {
 				setCurrentRecipeId(id);
 				setImportData(null);
 				setView("detail");
@@ -125,6 +139,32 @@ function App() {
 		});
 	};
 
+    const goToCookingQueue = () => {
+		handleSafeNavigation(() => {
+			const newUrl = `${window.location.pathname}?view=cookingQueue`;
+			if (window.location.search !== `?view=cookingQueue`) {
+				window.history.pushState({}, "", newUrl);
+			}
+			setCurrentRecipeId(null);
+			setIsFormDirty(false);
+			setView("cookingQueue");
+			currentUrlRef.current = window.location.href;
+		});
+	};
+
+	const goToCookingDetail = (sessionId: string) => {
+		handleSafeNavigation(() => {
+			const newUrl = `${window.location.pathname}?view=cookingDetail&sessionId=${sessionId}`;
+			if (window.location.search !== `?view=cookingDetail&sessionId=${sessionId}`) {
+				window.history.pushState({}, "", newUrl);
+			}
+			setCurrentRecipeId(sessionId); // Track session ID here
+			setIsFormDirty(false);
+			setView("cookingDetail");
+			currentUrlRef.current = window.location.href;
+		});
+	};
+
 	return (
 		<div className="min-h-screen bg-background text-foreground font-sans selection:bg-primary/10">
 			<header className="sticky top-0 z-40 w-full bg-background/80 backdrop-blur-xl border-b border-border/40">
@@ -144,6 +184,19 @@ function App() {
 						<p className="hidden sm:block text-[10px] font-bold uppercase tracking-widest text-muted-foreground opacity-60">
 							Recipe Database
 						</p>
+                        <Button
+                            variant="secondary"
+                            onClick={() => goToCookingQueue()}
+                            className="rounded-xl font-bold gap-2 bg-primary/10 text-primary hover:bg-primary/20 shadow-none border-none relative h-9 px-3"
+                        >
+                            <Utensils className="w-4 h-4" />
+                            <span className="hidden sm:inline">調理中</span>
+                            {activeSessions.length > 0 && (
+                                <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-destructive text-destructive-foreground text-[10px] flex items-center justify-center font-black animate-in zoom-in">
+                                    {activeSessions.length}
+                                </span>
+                            )}
+                        </Button>
 					</div>
 				</div>
 			</header>
@@ -182,6 +235,18 @@ function App() {
 						onDirtyStateChange={setIsFormDirty}
 					/>
 				)}
+                {view === "cookingQueue" && (
+                    <CookingQueue
+                        onBack={() => goToList()}
+                        onSelectSession={goToCookingDetail}
+                    />
+                )}
+                {view === "cookingDetail" && currentRecipeId && (
+                    <CookingDetail
+                        sessionId={currentRecipeId}
+                        onBack={() => goToCookingQueue()}
+                    />
+                )}
 			</main>
 
 			<AlertDialog open={showDiscardDialog} onOpenChange={setShowDiscardDialog}>
