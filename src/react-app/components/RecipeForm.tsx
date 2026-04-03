@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
-import { Plus, Minus, Scale, X, Clock, Utensils, Tag, ImageIcon, Link as LinkIcon, Check, Baby, ChevronLeft, Save, NotepadText } from "lucide-react";
+import { Plus, Scale, X, Clock, Utensils, Tag, ImageIcon, Link as LinkIcon, Check, Baby, ChevronLeft, Save, NotepadText } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function RecipeForm({ id, initialData, onSave, onCancel, onDirtyStateChange }: { 
