@@ -3,7 +3,8 @@ import { api } from "../api";
 import { Recipe } from "../types/schema.org";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext, type CarouselApi } from "@/components/ui/carousel";
 import { ChevronLeft, Edit, Trash2, Sun, ExternalLink, Clock, Utensils, Tag, NotepadText, Copy, Check, Share2, Scale, Pin } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -33,6 +34,19 @@ export function RecipeDetail({ id, onBack, onEdit, onDelete }: { id: string, onB
     const [recipe, setRecipe] = useState<Recipe | null>(null);
     const [loading, setLoading] = useState(true);
     const [wakeLockEnabled, setWakeLockEnabled] = useState(false);
+    const [carouselApi, setCarouselApi] = useState<CarouselApi>();
+    const [current, setCurrent] = useState(0);
+    const [selectedIndex, setSelectedIndex] = useState(0);
+    const [isOpen, setIsOpen] = useState(false);
+
+    useEffect(() => {
+        if (!carouselApi) return;
+        
+        setCurrent(carouselApi.selectedScrollSnap() + 1);
+        carouselApi.on("select", () => {
+            setCurrent(carouselApi.selectedScrollSnap() + 1);
+        });
+    }, [carouselApi]);
 
     // Wake Lock to prevent screen dimming during cooking
     useEffect(() => {
@@ -237,32 +251,74 @@ export function RecipeDetail({ id, onBack, onEdit, onDelete }: { id: string, onB
 
 				{/* 3. Media Grid */}
 				{recipe.images && recipe.images.length > 0 && (
-					<div className={cn(
-						"grid gap-4",
-						recipe.images.length === 1 ? "grid-cols-1" : recipe.images.length === 2 ? "grid-cols-2" : "grid-cols-1 sm:grid-cols-2 md:grid-cols-3"
-					)}>
-						{recipe.images.map((key) => (
-							<Dialog key={key}>
-								<DialogTrigger asChild>
-                                    <div className="aspect-[16/11] relative overflow-hidden rounded-[2rem] md:rounded-[2.5rem] border-none bg-muted shadow-lg group cursor-pointer active:scale-95 transition-all duration-500">
-										<img
-											src={`/api/images/${key}`}
-											alt={recipe.name}
-											className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-										/>
-										<div className="absolute inset-0 bg-black/5 group-hover:bg-black/0 transition-colors" />
-									</div>
-								</DialogTrigger>
-								<DialogContent className="max-w-4xl p-2 bg-background/40 backdrop-blur-3xl border-none shadow-none rounded-[2.5rem]">
+					<>
+						<div className={cn(
+							"grid gap-4",
+							recipe.images.length === 1 ? "grid-cols-1" : recipe.images.length === 2 ? "grid-cols-2" : "grid-cols-3"
+						)}>
+							{recipe.images.map((key, index) => (
+								<div 
+									key={key} 
+									className="aspect-[16/11] relative overflow-hidden rounded-[2rem] md:rounded-[2.5rem] border-none bg-muted shadow-lg group cursor-pointer active:scale-95 transition-all duration-500"
+									onClick={() => {
+										setSelectedIndex(index);
+										setIsOpen(true);
+									}}
+								>
 									<img
 										src={`/api/images/${key}`}
 										alt={recipe.name}
-										className="w-full h-auto max-h-[85vh] object-contain rounded-[2rem] shadow-2xl"
+										className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
 									/>
-								</DialogContent>
-							</Dialog>
-						))}
-					</div>
+									<div className="absolute inset-0 bg-black/5 group-hover:bg-black/0 transition-colors" />
+								</div>
+							))}
+						</div>
+
+						<Dialog open={isOpen} onOpenChange={setIsOpen}>
+							<DialogContent className="max-w-4xl p-2 bg-transparent border-none shadow-none flex flex-col items-center justify-center">
+								<Carousel setApi={setCarouselApi} opts={{ startIndex: selectedIndex }} className="w-full max-w-3xl">
+									<CarouselContent>
+										{recipe.images.map((key) => (
+											<CarouselItem key={key} className="flex items-center justify-center">
+												<div className="relative group">
+													<img
+														src={`/api/images/${key}`}
+														alt={recipe.name}
+														className="w-full h-auto max-h-[75vh] object-contain rounded-[2rem] shadow-2xl"
+													/>
+												</div>
+											</CarouselItem>
+										))}
+									</CarouselContent>
+									{recipe.images.length > 1 && (
+										<>
+											<div className="hidden md:block">
+												<CarouselPrevious className="bg-background/20 backdrop-blur-xl border-white/10 text-white hover:bg-background/40 -left-16" />
+												<CarouselNext className="bg-background/20 backdrop-blur-xl border-white/10 text-white hover:bg-background/40 -right-16" />
+											</div>
+											<div className="mt-4 flex flex-col items-center gap-2">
+												<div className="px-4 py-1.5 bg-black/40 backdrop-blur-2xl rounded-full border border-white/10 shadow-2xl flex items-center gap-3">
+													{recipe.images.map((_, i) => (
+														<div 
+															key={i} 
+															className={cn(
+																"w-1.5 h-1.5 rounded-full transition-all duration-300",
+																current === i + 1 ? "bg-white w-4" : "bg-white/30"
+															)}
+														/>
+													))}
+												</div>
+												<span className="text-[10px] font-black text-white/50 tracking-[0.2em] uppercase">
+													{current} / {recipe.images.length}
+												</span>
+											</div>
+										</>
+									)}
+								</Carousel>
+							</DialogContent>
+						</Dialog>
+					</>
 				)}
 
 				{/* 4. Essential Info Belt */}
