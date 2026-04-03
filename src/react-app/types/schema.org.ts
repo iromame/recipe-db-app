@@ -22,6 +22,7 @@ export interface Recipe {
     prepTime?: string;
     cookTime?: string;
     suitableForKids?: AgeCategory;
+    pinned?: boolean;
     recipeYield?: { value: number; unit: string };
     recipeIngredient?: RecipeIngredient[];
     recipeInstructions?: HowToStep[];

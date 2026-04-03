@@ -4,7 +4,7 @@ import { Recipe } from "../types/schema.org";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import { ChevronLeft, Edit, Trash2, Sun, ExternalLink, Clock, Utensils, Tag, NotepadText, Copy, Check, Share2, Scale } from "lucide-react";
+import { ChevronLeft, Edit, Trash2, Sun, ExternalLink, Clock, Utensils, Tag, NotepadText, Copy, Check, Share2, Scale, Pin } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 function CopyButton({ text, label }: { text: string, label?: string }) {
@@ -89,6 +89,18 @@ export function RecipeDetail({ id, onBack, onEdit, onDelete }: { id: string, onB
         }
     };
 
+    const handleTogglePin = async () => {
+        if (!recipe) return;
+        const newStatus = !recipe.pinned;
+        setRecipe({ ...recipe, pinned: newStatus });
+        try {
+            await api.updateRecipe(id, { pinned: newStatus } as any);
+        } catch (err) {
+            console.error("Failed to toggle pin", err);
+            setRecipe({ ...recipe, pinned: !newStatus });
+        }
+    };
+
     const handleShare = async () => {
         if (!recipe) return;
         const shareData = {
@@ -166,6 +178,15 @@ export function RecipeDetail({ id, onBack, onEdit, onDelete }: { id: string, onB
 						<span>戻る</span>
 					</Button>
 					<div className="flex gap-1.5">
+						<Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={handleTogglePin} 
+                            className={cn("rounded-xl transition-all", recipe?.pinned ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-primary hover:bg-primary/5")} 
+                            title={recipe?.pinned ? "ピン留めを解除" : "ピン留め"}
+                        >
+							<Pin className={cn("w-5 h-5", recipe?.pinned ? "fill-current" : "")} />
+						</Button>
 						<Button variant="ghost" size="icon" onClick={handleShare} className="rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all" title="レシピを共有">
 							<Share2 className="w-5 h-5" />
 						</Button>

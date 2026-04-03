@@ -57,6 +57,13 @@
       "when": 1774859031813,
       "tag": "0007_eager_microbe",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1775177912368,
+      "tag": "0008_futuristic_squadron_supreme",
+      "breakpoints": true
     }
   ]
 }

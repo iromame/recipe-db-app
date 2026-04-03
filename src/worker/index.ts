@@ -72,7 +72,7 @@ async function attachTags(db: any, recipeList: any[]) {
 
 app.get("/api/recipes", async (c) => {
     const db = drizzle(c.env.recipe_db);
-    const allRecipes = await db.select().from(recipes).orderBy(desc(recipes.updatedAt)).all();
+    const allRecipes = await db.select().from(recipes).orderBy(desc(recipes.pinned), desc(recipes.updatedAt)).all();
     const results = await attachTags(db, allRecipes);
     return c.json(results);
 });
@@ -97,6 +97,7 @@ app.post("/api/recipes", async (c) => {
         id: newId,
         name: body.name || "Untitled Recipe",
         cookingMode: body.cookingMode || "MAKE_AHEAD",
+        pinned: body.pinned || false,
         recipeCategory: body.recipeCategory || null,
         prepTime: body.prepTime || null,
         cookTime: body.cookTime || null,
@@ -127,6 +128,7 @@ app.put("/api/recipes/:id", async (c) => {
     const updateData: any = {};
     if (body.name !== undefined) updateData.name = body.name;
     if (body.cookingMode !== undefined) updateData.cookingMode = body.cookingMode;
+    if (body.pinned !== undefined) updateData.pinned = body.pinned;
     if (body.recipeCategory !== undefined) updateData.recipeCategory = body.recipeCategory;
     if (body.prepTime !== undefined) updateData.prepTime = body.prepTime;
     if (body.cookTime !== undefined) updateData.cookTime = body.cookTime;

@@ -8,6 +8,7 @@ export const recipes = sqliteTable("recipes", {
     prepTime: text("prep_time"), // ISO 8601 duration
     cookTime: text("cook_time"), // ISO 8601 duration
     suitableForKids: text("suitable_for_kids", { mode: "json" }), // { name: string, ageRange?: string }
+    pinned: integer("pinned", { mode: "boolean" }).notNull().default(false), // Mark recipe as pinned
     recipeYield: text("recipe_yield", { mode: "json" }), // { value: number, unit: string }
     recipeIngredient: text("recipe_ingredient", { mode: "json" }), // JSON array of ingredients
     recipeInstructions: text("recipe_instructions", { mode: "json" }), // JSON array or Markdown string of steps

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Drawer, DrawerClose, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
-import { Download, Plus, AlertCircle, Clock, Search, Filter, X, Tag, Utensils, Sparkles } from "lucide-react";
+import { Download, Plus, AlertCircle, Clock, Search, Filter, X, Tag, Utensils, Sparkles, Pin, ArrowUp } from "lucide-react";
 import { RecipeImportDialog } from "./RecipeImportDialog";
 import { cn } from "@/lib/utils";
 
@@ -21,6 +21,20 @@ export function RecipeList({ onSelectRecipe, onCreateNew, onImportSuccess }: { o
     const [selectedModes, setSelectedModes] = useState<string[]>([]);
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
     const [allTags, setAllTags] = useState<string[]>([]);
+    const [showPinnedOnly, setShowPinnedOnly] = useState(false);
+    const [showScrollTop, setShowScrollTop] = useState(false);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            setShowScrollTop(window.scrollY > 300);
+        };
+        window.addEventListener("scroll", handleScroll);
+        return () => window.removeEventListener("scroll", handleScroll);
+    }, []);
+
+    const scrollToTop = () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
 
     useEffect(() => {
         setLoading(true);
@@ -40,7 +54,9 @@ export function RecipeList({ onSelectRecipe, onCreateNew, onImportSuccess }: { o
     }, []);
 
     const filteredRecipes = useMemo(() => {
-        return recipes.filter(r => {
+        const filtered = recipes.filter(r => {
+            if (showPinnedOnly && !r.pinned) return false;
+
             // Mode filter (OR condition for multiple selected modes)
             if (selectedModes.length > 0) {
                 if (!r.cookingMode || !selectedModes.includes(r.cookingMode)) return false;
@@ -71,12 +87,38 @@ export function RecipeList({ onSelectRecipe, onCreateNew, onImportSuccess }: { o
             }
             return true;
         });
-    }, [recipes, searchQuery, selectedModes, selectedTags]);
+
+        // Always sort pinned items to the top, then by most recently updated
+        filtered.sort((a, b) => {
+            if (a.pinned && !b.pinned) return -1;
+            if (!a.pinned && b.pinned) return 1;
+
+            const timeA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+            const timeB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+            return timeB - timeA;
+        });
+
+        return filtered;
+    }, [recipes, searchQuery, selectedModes, selectedTags, showPinnedOnly]);
 
     const toggleTag = (tag: string) => {
         setSelectedTags(prev => 
             prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
         );
+    };
+
+    const togglePin = async (id: string, currentStatus: boolean, e: React.MouseEvent) => {
+        e.stopPropagation();
+        const newStatus = !currentStatus;
+        // Optimistic update
+        setRecipes((prev) => prev.map((r) => (r.id === id ? { ...r, pinned: newStatus } : r)));
+        try {
+            await api.updateRecipe(id, { pinned: newStatus } as any);
+        } catch (err) {
+            console.error("Failed to toggle pin", err);
+            // Revert on failure
+            setRecipes((prev) => prev.map((r) => (r.id === id ? { ...r, pinned: currentStatus } : r)));
+        }
     };
 
     const parseISOToMinutes = (iso: string) => {
@@ -133,11 +175,13 @@ export function RecipeList({ onSelectRecipe, onCreateNew, onImportSuccess }: { o
                         <TabsTrigger value="DINNER" className="rounded-2xl font-bold transition-all data-[state=active]:bg-accent/20 data-[state=active]:text-accent-foreground data-[state=active]:shadow-sm">晩ごはん</TabsTrigger>
                     </TabsList>
                 </Tabs>
+
             </div>
 
             {/* 2. Search & Controls */}
-            <div className="flex gap-3 sticky top-20 z-30 py-2 bg-background/60 backdrop-blur-md -mx-4 px-4">
-                <div className="relative flex-1 group">
+            <div className="flex flex-col gap-3 sticky top-0 md:top-20 z-30 py-3 bg-background/80 backdrop-blur-xl -mx-4 px-4 shadow-[0_4px_30px_rgba(0,0,0,0.02)]">
+                <div className="flex gap-2">
+                    <div className="relative flex-1 group">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
                     <Input
                         placeholder="レシピ名、材料、タグで検索..."
@@ -238,6 +282,23 @@ export function RecipeList({ onSelectRecipe, onCreateNew, onImportSuccess }: { o
                         </div>
                     </DrawerContent>
                 </Drawer>
+                </div>
+                
+                <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
+                    <Badge
+                        variant={showPinnedOnly ? "default" : "outline"}
+                        className={cn(
+                            "px-4 py-2 rounded-2xl cursor-pointer font-bold transition-all shadow-sm active:scale-95 whitespace-nowrap",
+                            showPinnedOnly 
+                                ? "bg-primary text-primary-foreground border-transparent shadow-primary/20" 
+                                : "bg-muted/30 text-muted-foreground hover:bg-muted/80 border-border/40"
+                        )}
+                        onClick={() => setShowPinnedOnly(!showPinnedOnly)}
+                    >
+                        <Pin className={cn("w-4 h-4 mr-2", showPinnedOnly ? "fill-current" : "")} />
+                        ピン留めのみ
+                    </Badge>
+                </div>
             </div>
 
             {/* 3. Recipe Grid */}
@@ -287,7 +348,16 @@ export function RecipeList({ onSelectRecipe, onCreateNew, onImportSuccess }: { o
                                         )}>
                                             {r.cookingMode === 'MAKE_AHEAD' ? '作り置き' : r.cookingMode === 'LUNCH' ? 'お昼' : '晩ごはん'}
                                         </Badge>
-                                        <div className="flex gap-1.5">
+                                        <div className="flex gap-2 items-center">
+                                            <button
+                                                onClick={(e) => r.id && togglePin(r.id, !!r.pinned, e)}
+                                                className={cn(
+                                                    "p-2 rounded-full transition-colors active:scale-90",
+                                                    r.pinned ? "text-primary bg-primary/10" : "text-muted-foreground/40 hover:text-muted-foreground hover:bg-muted"
+                                                )}
+                                            >
+                                                <Pin className={cn("w-5 h-5", r.pinned ? "fill-current" : "")} />
+                                            </button>
                                             {r.images && r.images.length > 0 && (
                                                 <div className="flex -space-x-2">
                                                     {r.images.slice(0, 3).map((img, idx) => (
@@ -374,6 +444,21 @@ export function RecipeList({ onSelectRecipe, onCreateNew, onImportSuccess }: { o
                         新しいレシピを作成
                     </Button>
                 </div>
+            </div>
+
+            {/* Scroll to Top */}
+            <div className={cn(
+                "fixed bottom-8 left-1/2 -translate-x-1/2 z-50 transition-all duration-300",
+                showScrollTop ? "translate-y-0 opacity-100" : "translate-y-12 opacity-0 pointer-events-none"
+            )}>
+                <Button 
+                    onClick={scrollToTop} 
+                    variant="outline"
+                    className="rounded-full h-12 px-5 shadow-2xl backdrop-blur-md bg-background/80 text-foreground font-bold"
+                >
+                    <ArrowUp className="w-5 h-5 mr-2" />
+                    トップへ
+                </Button>
             </div>
         </div>
     );
