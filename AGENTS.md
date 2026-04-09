@@ -96,18 +96,9 @@ Retrieve API references and limits from:
 * **Semantic Colors:** `globals.css` の `:root` で定義された `shadcn/ui` のセマンティック変数（`--primary`, `--destructive`, `--muted` 等）を必ず使用し、ハードコードした色指定を避けること。
 * **Contrast:** すべてのテキストは **WCAG AA (4.5:1)** 以上のコントラスト比を維持すること。暗い背景に暗い文字を重ねることを厳禁とする。
 
-### B. コンポーネント・パターン（shadcn/ui 活用）
-
-* **Segmented Control:** 択一選択（調理モード等）には `shadcn/ui` の `Tabs` コンポーネントを使用し、ボタンの高さを一列に揃えること。
-* **Tag Selection:** タグ入力には `shadcn/ui` の `Combobox` (Command) を使用し、既存タグの検索と「新規追加」ができる Creatable な UI を実現すること。
-* **Buttons:** 角丸は `rounded-lg` で統一。スマホでの誤タップを防ぐため、クリックターゲットは **44x44px 以上**を確保すること。
-
 ### C. モバイルUX (Kitchen-First)
 
 * **Thumb Zone:** 保存ボタンや入力トレイは画面下部（親指が届く範囲）に配置すること。
-* **Adaptive Triggers:** 複雑な入力項目は、画面下部からせり上がる `shadcn/ui` の `Drawer` を活用して実装すること。
-* **調理時間ピッカー:** 直接数値を打たせず、上下スワイプの「ドラムロール式ピッカー」と、「15分」「30分」といった頻出時間の「クイック選択チップ」を併用する。
-* **Creatable Multi-Select:** タグ入力には `shadcn/ui` の Combobox 等を活用し、既存タグの検索と「その場での新規タグ作成」をシームレスに行えるようにする。
 * **スリープ防止:** レシピ閲覧画面では `Screen Wake Lock API` を利用し、調理中に画面が消えるのを防止する。
 
 ## 6. 開発フェーズ (Phases)
