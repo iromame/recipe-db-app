@@ -101,12 +101,7 @@ Retrieve API references and limits from:
 * **Thumb Zone:** 保存ボタンや入力トレイは画面下部（親指が届く範囲）に配置すること。
 * **スリープ防止:** レシピ閲覧画面では `Screen Wake Lock API` を利用し、調理中に画面が消えるのを防止する。
 
-## 6. 開発フェーズ (Phases)
 
-1. **MVP:** `AGENTS.md` の多対多リレーションと ISO 8601 準拠を確認し、Drizzle スキーマを作成。Hono で CRUD API を実装。
-2. **UI実装:** スマホでの「片手操作」を重視し、ドラムロール式ピッカーと Creatable なタグ入力フォームを実装。
-3. **PWA & UX:** PWA化（`vite-plugin-pwa`）と `Screen Wake Lock` の組み込み。
-4. **AI拡張:** 写真からのレシピ自動抽出 (OCR + Gemini API)。
 
 ---
 
