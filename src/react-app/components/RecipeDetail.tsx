@@ -213,7 +213,7 @@ export function RecipeDetail({ id, onBack, onEdit, onDelete }: { id: string, onB
 		<div className="bg-background min-h-screen pb-48 animate-in fade-in duration-500">
 			{/* 1. Header Navigation */}
 			<div className="bg-background/80 backdrop-blur-2xl border-b border-border/40 sticky top-0 z-40 transition-all">
-				<div className="max-w-3xl mx-auto px-4 h-16 flex justify-between items-center">
+				<div className="max-w-3xl mx-auto px-2 h-16 flex justify-between items-center">
 					<Button variant="ghost" size="sm" onClick={onBack} className="gap-2 rounded-2xl -ml-2 font-bold text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all">
 						<ChevronLeft className="w-5 h-5" />
 						<span>戻る</span>
@@ -241,7 +241,7 @@ export function RecipeDetail({ id, onBack, onEdit, onDelete }: { id: string, onB
 				</div>
 			</div>
 
-			<div className="max-w-3xl mx-auto px-4 py-8 md:py-12 space-y-12 md:space-y-16">
+			<div className="max-w-3xl mx-auto px-2 py-8 md:py-12 space-y-12 md:space-y-16">
 				{/* 2. Title & Status Section */}
 				<div className="space-y-6 md:space-y-8">
 					<div className="space-y-4">

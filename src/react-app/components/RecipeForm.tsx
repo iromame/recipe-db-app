@@ -246,7 +246,7 @@ export function RecipeForm({ id, initialData, onSave, onCancel, onDirtyStateChan
 					{/* Drum Roll Simulation (Horizontal Scroll) */}
 					<div
 						ref={scrollRef}
-						className="flex gap-2.5 overflow-x-auto pb-4 -mx-4 px-4 touch-pan-x no-scrollbar mask-fade-edges"
+						className="flex gap-2.5 overflow-x-auto pb-4 -mx-2 px-2 touch-pan-x no-scrollbar mask-fade-edges"
 					>
 						{fullOptions.map(m => (
 							<button
@@ -375,7 +375,7 @@ export function RecipeForm({ id, initialData, onSave, onCancel, onDirtyStateChan
 		<div className="bg-background min-h-screen pb-40 animate-in fade-in zoom-in-95 duration-500">
 			{/* Header Navigation */}
 			<div className="bg-background/80 backdrop-blur-2xl border-b border-border/40 sticky top-0 z-50">
-				<div className="max-w-2xl mx-auto px-4 h-16 flex justify-between items-center">
+				<div className="max-w-2xl mx-auto px-2 h-16 flex justify-between items-center">
 					<Button variant="ghost" size="sm" onClick={onCancel} className="gap-2 rounded-2xl -ml-2 font-bold text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all">
 						<ChevronLeft className="w-5 h-5" />
 						<span>キャンセル</span>
@@ -387,7 +387,7 @@ export function RecipeForm({ id, initialData, onSave, onCancel, onDirtyStateChan
 				</div>
 			</div>
 
-			<form onSubmit={handleSubmit} className="max-w-2xl mx-auto px-4 py-12 space-y-16">
+			<form onSubmit={handleSubmit} className="max-w-2xl mx-auto px-2 py-12 space-y-16">
 				{/* 1. Primary Identity */}
 				<section className="space-y-10">
 					<div className="space-y-4">

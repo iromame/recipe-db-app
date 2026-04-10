@@ -179,7 +179,7 @@ export function RecipeList({ onSelectRecipe, onCreateNew, onImportSuccess }: { o
             </div>
 
             {/* 2. Search & Controls */}
-            <div className="flex flex-col gap-3 sticky top-0 md:top-20 z-30 py-3 bg-background/80 backdrop-blur-xl -mx-4 px-4 shadow-[0_4px_30px_rgba(0,0,0,0.02)]">
+            <div className="flex flex-col gap-3 sticky top-0 md:top-20 z-30 py-3 bg-background/80 backdrop-blur-xl -mx-2 px-2 shadow-[0_4px_30px_rgba(0,0,0,0.02)]">
                 <div className="flex gap-2">
                     <div className="relative flex-1 group">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
@@ -284,7 +284,7 @@ export function RecipeList({ onSelectRecipe, onCreateNew, onImportSuccess }: { o
                 </Drawer>
                 </div>
                 
-                <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
+                <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar -mx-2 px-2 sm:mx-0 sm:px-0">
                     <Badge
                         variant={showPinnedOnly ? "default" : "outline"}
                         className={cn(

@@ -9,7 +9,7 @@ export function CookingQueue({ onBack, onSelectSession }: { onBack: () => void, 
         <div className="bg-background min-h-screen pb-32 animate-in fade-in duration-500">
             {/* Header */}
             <div className="bg-background/80 backdrop-blur-2xl border-b border-border/40 sticky top-0 z-40 transition-all">
-                <div className="max-w-3xl mx-auto px-4 h-16 flex justify-between items-center">
+                <div className="max-w-3xl mx-auto px-2 h-16 flex justify-between items-center">
                     <Button variant="ghost" size="sm" onClick={onBack} className="gap-2 rounded-2xl -ml-2 font-bold text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all">
                         <ChevronLeft className="w-5 h-5" />
                         <span>戻る</span>
@@ -22,7 +22,7 @@ export function CookingQueue({ onBack, onSelectSession }: { onBack: () => void, 
                 </div>
             </div>
 
-            <div className="max-w-xl mx-auto px-4 py-8 space-y-6">
+            <div className="max-w-xl mx-auto px-2 py-8 space-y-6">
                 <div className="space-y-2">
                     <h1 className="text-3xl font-black tracking-tighter">今日の献立キュー</h1>
                     <p className="text-muted-foreground font-medium">現在ストックされている調理予定です。</p>
