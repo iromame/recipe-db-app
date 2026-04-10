@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
-import { api } from "../api";
+import { api, SESSION_EXPIRED_ERROR } from "../api";
 import { Recipe } from "../types/schema.org";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -52,6 +52,8 @@ export function RecipeList({ onSelectRecipe, onCreateNew, onImportSuccess }: { o
             })
             .finally(() => setLoading(false));
     }, []);
+
+    const isSessionExpiredError = error === SESSION_EXPIRED_ERROR;
 
     const filteredRecipes = useMemo(() => {
         const filtered = recipes.filter(r => {
@@ -133,16 +135,30 @@ export function RecipeList({ onSelectRecipe, onCreateNew, onImportSuccess }: { o
             <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
                     <AlertCircle className="w-5 h-5" />
-                    Error loading recipes
+                    {isSessionExpiredError ? "ログインセッションが切れました" : "Error loading recipes"}
                 </CardTitle>
             </CardHeader>
             <CardContent>
-                <p className="text-sm opacity-90">{error}</p>
+                <p className="text-sm opacity-90">
+                    {isSessionExpiredError
+                        ? "認証の有効期限が切れた可能性があります。再ログインしてください。"
+                        : error
+                    }
+                </p>
             </CardContent>
-            <CardFooter>
-                <Button variant="destructive" onClick={() => window.location.reload()}>
-                    Retry (Reload App)
-                </Button>
+            <CardFooter className="gap-3">
+                {isSessionExpiredError ? (
+                    <Button
+                        variant="destructive"
+                        onClick={() => { window.location.href = "/cdn-cgi/access/login"; }}
+                    >
+                        再ログイン
+                    </Button>
+                ) : (
+                    <Button variant="destructive" onClick={() => window.location.reload()}>
+                        Retry (Reload App)
+                    </Button>
+                )}
             </CardFooter>
         </Card>
     );

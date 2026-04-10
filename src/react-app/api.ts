@@ -1,5 +1,23 @@
 import { Recipe } from "./types/schema.org";
 
+// Wrap fetch() to catch network-level errors (e.g. "Failed to fetch", "NetworkError").
+// These happen BEFORE checkResponse is reached, typically when Cloudflare Access
+// rejects an unauthenticated request with a CORS-blocked redirect on mobile.
+const SESSION_EXPIRED_ERROR = "SESSION_EXPIRED";
+
+const safeFetch = async (input: string, init?: RequestInit): Promise<Response> => {
+    try {
+        return await fetch(input, init);
+    } catch (e: any) {
+        console.error("Network-level fetch error (possible session expiry):", e);
+        // Throw a special marker so the UI can show a re-login prompt
+        // instead of a generic "Failed to fetch" message.
+        const err = new Error(SESSION_EXPIRED_ERROR);
+        (err as any).isSessionExpired = true;
+        throw err;
+    }
+};
+
 const checkResponse = async (res: Response) => {
     // Cloudflare Access redirects unauthenticated API requests to its login page (cloudflareaccess.com).
     if (res.redirected && res.url.includes("cloudflareaccess.com")) {
@@ -37,17 +55,19 @@ const checkResponse = async (res: Response) => {
     }
 };
 
+export { SESSION_EXPIRED_ERROR };
+
 export const api = {
     getRecipes: async (): Promise<Recipe[]> => {
-        const res = await fetch("/api/recipes");
+        const res = await safeFetch("/api/recipes");
         return checkResponse(res);
     },
     getRecipe: async (id: string): Promise<Recipe> => {
-        const res = await fetch(`/api/recipes/${id}`);
+        const res = await safeFetch(`/api/recipes/${id}`);
         return checkResponse(res);
     },
     createRecipe: async (recipe: Recipe): Promise<Recipe> => {
-        const res = await fetch("/api/recipes", {
+        const res = await safeFetch("/api/recipes", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(recipe),
@@ -55,7 +75,7 @@ export const api = {
         return checkResponse(res);
     },
     updateRecipe: async (id: string, recipe: Recipe): Promise<void> => {
-        const res = await fetch(`/api/recipes/${id}`, {
+        const res = await safeFetch(`/api/recipes/${id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(recipe),
@@ -63,7 +83,7 @@ export const api = {
         await checkResponse(res);
     },
     deleteRecipe: async (id: string): Promise<void> => {
-        const res = await fetch(`/api/recipes/${id}`, {
+        const res = await safeFetch(`/api/recipes/${id}`, {
             method: "DELETE",
         });
         await checkResponse(res);
@@ -71,21 +91,21 @@ export const api = {
     uploadImage: async (recipeId: string, file: File): Promise<{ key: string }> => {
         const formData = new FormData();
         formData.append("file", file);
-        const res = await fetch(`/api/recipes/${recipeId}/images`, {
+        const res = await safeFetch(`/api/recipes/${recipeId}/images`, {
             method: "POST",
             body: formData,
         });
         return checkResponse(res);
     },
     extractRecipe: async (formData: FormData): Promise<{ success: boolean; data: any }> => {
-        const res = await fetch("/api/recipes/extract", {
+        const res = await safeFetch("/api/recipes/extract", {
             method: "POST",
             body: formData,
         });
         return checkResponse(res);
     },
     trackCookingHistory: async (recipeId: string): Promise<{ success: boolean; id: string }> => {
-        const res = await fetch("/api/cooking-history", {
+        const res = await safeFetch("/api/cooking-history", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ recipeId }),
