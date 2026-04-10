@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext, type CarouselApi } from "@/components/ui/carousel";
-import { ChevronLeft, Edit, Trash2, Sun, ExternalLink, Clock, Utensils, Tag, NotepadText, Copy, Check, Share2, Scale, Pin, ListPlus } from "lucide-react";
+import { ChevronLeft, Edit, Trash2, Sun, ExternalLink, Clock, Utensils, Tag, NotepadText, Copy, Check, Share2, Scale, Pin, ListPlus, CookingPot, Moon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCookingStore } from "../store/useCookingStore";
 
@@ -247,12 +247,14 @@ export function RecipeDetail({ id, onBack, onEdit, onDelete }: { id: string, onB
 					<div className="space-y-4">
 						<div className="flex flex-wrap items-center gap-2 md:gap-3">
 							<Badge variant="outline" className={cn(
-								"px-3 md:px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] border-2",
+								"px-3 md:px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] border-2 flex items-center gap-2",
 								recipe.cookingMode === 'MAKE_AHEAD' ? 'border-primary/40 text-primary bg-primary/5' :
 									recipe.cookingMode === 'LUNCH' ? 'border-secondary/60 text-secondary-foreground bg-secondary/10' :
 										'border-accent/60 text-accent-foreground bg-accent/10'
 							)}>
-								{recipe.cookingMode === 'MAKE_AHEAD' ? '作り置き' : recipe.cookingMode === 'LUNCH' ? 'お昼' : '晩ごはん'}
+								{recipe.cookingMode === 'MAKE_AHEAD' ? <><CookingPot className="w-3 h-3" /> 作り置き</> : 
+                                 recipe.cookingMode === 'LUNCH' ? <><Sun className="w-3 h-3" /> お昼</> : 
+                                 <><Moon className="w-3 h-3" /> 晩ごはん</>}
 							</Badge>
 							{recipe.tags?.map(t => (
 								<Badge key={t} variant="secondary" className="px-3 md:px-4 py-1.5 bg-muted/40 text-muted-foreground/80 rounded-full text-[10px] font-bold tracking-tight border-none">

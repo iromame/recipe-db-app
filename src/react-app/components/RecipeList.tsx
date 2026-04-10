@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Drawer, DrawerClose, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
-import { Download, Plus, AlertCircle, Clock, Search, Filter, X, Tag, Utensils, Sparkles, Pin, ArrowUp } from "lucide-react";
+import { Download, Plus, AlertCircle, Clock, Search, Filter, X, Tag, Utensils, Sparkles, Pin, ArrowUp, CookingPot, Sun, Moon } from "lucide-react";
 import { RecipeImportDialog } from "./RecipeImportDialog";
 import { cn } from "@/lib/utils";
 
@@ -340,12 +340,14 @@ export function RecipeList({ onSelectRecipe, onCreateNew, onImportSuccess }: { o
                             >
                                 <div className="flex items-center gap-3 overflow-hidden flex-1">
                                     <div className={cn(
-                                        "flex-shrink-0 flex items-center justify-center w-9 h-9 rounded-full border border-border/40 font-black text-sm",
-                                        r.cookingMode === 'MAKE_AHEAD' ? 'bg-primary/10 text-primary border-primary/20' :
-                                        r.cookingMode === 'LUNCH' ? 'bg-secondary/20 text-secondary-foreground border-secondary/20' : 
-                                        'bg-accent/20 text-accent-foreground border-accent/20'
+                                        "flex-shrink-0 flex items-center justify-center w-9 h-9 rounded-full border border-border/40 transition-shadow",
+                                        r.cookingMode === 'MAKE_AHEAD' ? 'bg-primary/10 text-primary border-primary/20 shadow-sm shadow-primary/5' :
+                                        r.cookingMode === 'LUNCH' ? 'bg-secondary/20 text-secondary-foreground border-secondary/20 shadow-sm shadow-secondary/5' : 
+                                        'bg-accent/20 text-accent-foreground border-accent/20 shadow-sm shadow-accent/5'
                                     )}>
-                                        {r.cookingMode === 'MAKE_AHEAD' ? '作' : r.cookingMode === 'LUNCH' ? '昼' : '晩'}
+                                        {r.cookingMode === 'MAKE_AHEAD' ? <CookingPot className="w-5 h-5" /> : 
+                                         r.cookingMode === 'LUNCH' ? <Sun className="w-5 h-5" /> : 
+                                         <Moon className="w-5 h-5" />}
                                     </div>
                                     <div className="flex flex-col overflow-hidden flex-1">
                                         <div className="flex items-center gap-2">

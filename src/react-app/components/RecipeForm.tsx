@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
-import { Plus, Scale, X, Clock, Utensils, Tag, ImageIcon, Link as LinkIcon, Check, Baby, ChevronLeft, Save, NotepadText } from "lucide-react";
+import { Plus, Scale, X, Clock, Utensils, Tag, ImageIcon, Link as LinkIcon, Check, Baby, ChevronLeft, Save, NotepadText, CookingPot, Sun, Moon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function RecipeForm({ id, initialData, onSave, onCancel, onDirtyStateChange }: { 
@@ -401,9 +401,18 @@ export function RecipeForm({ id, initialData, onSave, onCancel, onDirtyStateChan
 							className="w-full"
 						>
 							<TabsList className="grid w-full grid-cols-3 h-16 p-1.5 bg-muted/40 rounded-[1.5rem] border border-border/20 shadow-inner">
-								<TabsTrigger value="MAKE_AHEAD" className="rounded-[1rem] font-black text-xs uppercase tracking-widest transition-all data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-lg">作り置き</TabsTrigger>
-								<TabsTrigger value="LUNCH" className="rounded-[1rem] font-black text-xs uppercase tracking-widest transition-all data-[state=active]:bg-background data-[state=active]:text-secondary-foreground data-[state=active]:shadow-lg">お昼</TabsTrigger>
-								<TabsTrigger value="DINNER" className="rounded-[1rem] font-black text-xs uppercase tracking-widest transition-all data-[state=active]:bg-background data-[state=active]:text-accent-foreground data-[state=active]:shadow-lg">晩ごはん</TabsTrigger>
+								<TabsTrigger value="MAKE_AHEAD" className="rounded-[1rem] font-black text-[10px] uppercase tracking-widest transition-all data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-lg flex items-center gap-2">
+									<CookingPot className="w-4 h-4" />
+									<span className="hidden sm:inline">作り置き</span>
+								</TabsTrigger>
+								<TabsTrigger value="LUNCH" className="rounded-[1rem] font-black text-[10px] uppercase tracking-widest transition-all data-[state=active]:bg-background data-[state=active]:text-secondary-foreground data-[state=active]:shadow-lg flex items-center gap-2">
+									<Sun className="w-4 h-4" />
+									<span className="hidden sm:inline">お昼</span>
+								</TabsTrigger>
+								<TabsTrigger value="DINNER" className="rounded-[1rem] font-black text-[10px] uppercase tracking-widest transition-all data-[state=active]:bg-background data-[state=active]:text-accent-foreground data-[state=active]:shadow-lg flex items-center gap-2">
+									<Moon className="w-4 h-4" />
+									<span className="hidden sm:inline">晩ごはん</span>
+								</TabsTrigger>
 							</TabsList>
 						</Tabs>
 					</div>
