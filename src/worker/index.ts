@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { drizzle } from "drizzle-orm/d1";
-import { eq, inArray, desc } from "drizzle-orm";
+import { eq, inArray, desc, sql } from "drizzle-orm";
 import { recipes, tags, recipeTags, cookingEvents } from "../db/schema";
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 
@@ -73,7 +73,34 @@ async function attachTags(db: any, recipeList: any[]) {
 app.get("/api/recipes", async (c) => {
     const db = drizzle(c.env.recipe_db);
     const allRecipes = await db.select().from(recipes).orderBy(desc(recipes.pinned), desc(recipes.updatedAt)).all();
-    const results = await attachTags(db, allRecipes);
+
+    // Attach tags
+    const withTags = await attachTags(db, allRecipes);
+
+    // Attach cooking stats
+    if (withTags.length === 0) return c.json(withTags);
+    
+    // Fetch all cooking events stats grouped by recipe
+    const statsQuery = await db.select({
+        recipeId: cookingEvents.recipeId,
+        count: sql<number>`count(${cookingEvents.id})`,
+        lastCookedAt: sql<string>`max(${cookingEvents.createdAt})`
+    })
+    .from(cookingEvents)
+    .groupBy(cookingEvents.recipeId)
+    .all() as { recipeId: string, count: number, lastCookedAt: string }[];
+
+    const statsMap = new Map(statsQuery.map(s => [s.recipeId, s]));
+
+    const results = withTags.map(r => {
+        const stats = statsMap.get(r.id);
+        return {
+            ...r,
+            cookCount: stats ? stats.count : 0,
+            lastCookedAt: stats ? stats.lastCookedAt : null,
+        };
+    });
+
     return c.json(results);
 });
 

@@ -32,4 +32,6 @@ export interface Recipe {
     notes?: string;
     createdAt?: Date;
     updatedAt?: Date;
+    cookCount?: number;
+    lastCookedAt?: string;
 }

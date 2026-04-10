@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Drawer, DrawerClose, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
-import { Download, Plus, AlertCircle, Clock, Search, Filter, X, Tag, Utensils, Sparkles, Pin, ArrowUp, CookingPot, Sun, Moon } from "lucide-react";
+import { Download, Plus, AlertCircle, Clock, Search, Filter, X, Tag, Utensils, Sparkles, Pin, ArrowUp, ArrowDown, ListFilter, CookingPot, Sun, Moon } from "lucide-react";
 import { RecipeImportDialog } from "./RecipeImportDialog";
 import { cn } from "@/lib/utils";
 
@@ -23,6 +23,21 @@ export function RecipeList({ onSelectRecipe, onCreateNew, onImportSuccess }: { o
     const [allTags, setAllTags] = useState<string[]>([]);
     const [showPinnedOnly, setShowPinnedOnly] = useState(false);
     const [showScrollTop, setShowScrollTop] = useState(false);
+    
+    type SortAxis = 'updatedAt' | 'createdAt' | 'lastCookedAt' | 'cookCount' | 'prepTime' | 'cookTime';
+    type SortOrder = 'desc' | 'asc';
+    const [sortAxis, setSortAxis] = useState<SortAxis>('updatedAt');
+    const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+    
+    const SORT_OPTIONS: { value: SortAxis; label: string }[] = [
+        { value: 'updatedAt', label: '更新日時' },
+        { value: 'createdAt', label: '登録日時' },
+        { value: 'lastCookedAt', label: '最終調理日' },
+        { value: 'cookCount', label: '調理回数' },
+        { value: 'prepTime', label: '準備時間' },
+        { value: 'cookTime', label: '調理時間' },
+    ];
+    const currentSortLabel = SORT_OPTIONS.find(o => o.value === sortAxis)?.label || '更新日時';
 
     useEffect(() => {
         const handleScroll = () => {
@@ -90,18 +105,48 @@ export function RecipeList({ onSelectRecipe, onCreateNew, onImportSuccess }: { o
             return true;
         });
 
-        // Always sort pinned items to the top, then by most recently updated
+        // Always sort pinned items to the top, then by selected sort axis and order
         filtered.sort((a, b) => {
             if (a.pinned && !b.pinned) return -1;
             if (!a.pinned && b.pinned) return 1;
 
-            const timeA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
-            const timeB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
-            return timeB - timeA;
+            let valA: any = 0;
+            let valB: any = 0;
+
+            switch(sortAxis) {
+                case 'updatedAt':
+                    valA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+                    valB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+                    break;
+                case 'createdAt':
+                    valA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+                    valB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+                    break;
+                case 'lastCookedAt':
+                    valA = a.lastCookedAt ? new Date(a.lastCookedAt).getTime() : 0;
+                    valB = b.lastCookedAt ? new Date(b.lastCookedAt).getTime() : 0;
+                    break;
+                case 'cookCount':
+                    valA = a.cookCount || 0;
+                    valB = b.cookCount || 0;
+                    break;
+                case 'prepTime':
+                    valA = parseISOToMinutes(a.prepTime || "");
+                    valB = parseISOToMinutes(b.prepTime || "");
+                    break;
+                case 'cookTime':
+                    valA = parseISOToMinutes(a.cookTime || "");
+                    valB = parseISOToMinutes(b.cookTime || "");
+                    break;
+            }
+
+            if (valA < valB) return sortOrder === 'desc' ? 1 : -1;
+            if (valA > valB) return sortOrder === 'desc' ? -1 : 1;
+            return 0;
         });
 
         return filtered;
-    }, [recipes, searchQuery, selectedModes, selectedTags, showPinnedOnly]);
+    }, [recipes, searchQuery, selectedModes, selectedTags, showPinnedOnly, sortAxis, sortOrder]);
 
     const toggleTag = (tag: string) => {
         setSelectedTags(prev => 
@@ -214,6 +259,63 @@ export function RecipeList({ onSelectRecipe, onCreateNew, onImportSuccess }: { o
                         </button>
                     )}
                 </div>
+
+                {/* Sort Controls */}
+                <Drawer>
+                    <DrawerTrigger asChild>
+                        <Button 
+                            variant="outline" 
+                            className={cn(
+                                "h-14 px-3 min-w-[4rem] rounded-2xl flex-shrink-0 bg-muted/30 border-none shadow-inner relative transition-all active:scale-95 flex flex-col items-center justify-center gap-1",
+                                sortAxis !== 'updatedAt' && "text-primary bg-primary/10 ring-2 ring-primary/20"
+                            )}
+                        >
+                            <ListFilter className="h-5 w-5" />
+                            <span className="text-[10px] font-bold leading-none">{currentSortLabel}</span>
+                        </Button>
+                    </DrawerTrigger>
+                    <DrawerContent className="px-6 pb-12 rounded-t-[3rem]">
+                        <div className="mx-auto w-full max-w-sm space-y-8 mt-4">
+                            <div className="space-y-4">
+                                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
+                                    <ListFilter className="w-3 h-3" /> 並び替えの軸
+                                </label>
+                                <div className="flex flex-col gap-2">
+                                    {SORT_OPTIONS.map(axis => (
+                                        <div
+                                            key={axis.value}
+                                            className={cn(
+                                                "px-5 py-4 rounded-2xl text-base font-bold cursor-pointer transition-all active:scale-95 border-none flex justify-between items-center",
+                                                sortAxis === axis.value 
+                                                    ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+                                                    : "bg-muted/30 text-muted-foreground hover:bg-muted/50"
+                                            )}
+                                            onClick={() => setSortAxis(axis.value as SortAxis)}
+                                        >
+                                            {axis.label}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            <DrawerClose asChild>
+                                <Button className="w-full rounded-2xl h-14 font-extrabold text-lg shadow-xl shadow-primary/20">
+                                    閉じる
+                                </Button>
+                            </DrawerClose>
+                        </div>
+                    </DrawerContent>
+                </Drawer>
+
+                <Button 
+                    title="昇順/降順を切り替え"
+                    variant="outline" 
+                    onClick={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
+                    className="h-14 px-3 min-w-[3.5rem] rounded-2xl flex-shrink-0 bg-muted/30 border-none shadow-inner relative transition-all active:scale-95 text-foreground flex flex-col items-center justify-center gap-1"
+                >
+                    {sortOrder === 'desc' ? <ArrowDown className="h-5 w-5" /> : <ArrowUp className="h-5 w-5" />}
+                    <span className="text-[10px] font-bold leading-none text-muted-foreground/70">{sortOrder === 'desc' ? '降順' : '昇順'}</span>
+                </Button>
+
                 <Drawer>
                     <DrawerTrigger asChild>
                         <Button 
