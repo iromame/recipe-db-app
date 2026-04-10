@@ -206,18 +206,19 @@ export function RecipeList({ onSelectRecipe, onCreateNew, onImportSuccess }: { o
     );
 
     return (
-        <div className="space-y-10 pb-20">
-            {/* 1. Header & Primary Mode Tabs */}
-            <div className="space-y-6">
-                <div className="flex flex-col gap-2">
-                    <h2 className="text-4xl font-extrabold tracking-tight text-foreground">
-                        レシピを探す
-                    </h2>
-                    <p className="text-muted-foreground text-sm font-medium">
-                        {recipes.length} 品のレシピが登録されています
-                    </p>
-                </div>
+        <div className="space-y-4 pb-20">
+            {/* 1. Page Title */}
+            <div className="flex flex-col gap-2 pt-2">
+                <h2 className="text-4xl font-extrabold tracking-tight text-foreground">
+                    レシピを探す
+                </h2>
+                <p className="text-muted-foreground text-sm font-medium">
+                    {recipes.length} 品のレシピが登録されています
+                </p>
+            </div>
 
+            {/* 2. Sticky Header (Tabs + Search & Controls) */}
+            <div className="sticky top-16 z-30 flex flex-col gap-3 py-3 bg-background/95 backdrop-blur-lg -mx-2 px-2 shadow-[0_4px_20px_rgba(0,0,0,0.05)] pt-2 md:top-16">
                 <Tabs 
                     value={selectedModes.length === 0 ? "ALL" : selectedModes.length === 1 ? selectedModes[0] : "MULTIPLE"} 
                     onValueChange={(val) => {
@@ -226,7 +227,7 @@ export function RecipeList({ onSelectRecipe, onCreateNew, onImportSuccess }: { o
                     }} 
                     className="w-full"
                 >
-                    <TabsList className="h-16 w-full p-1.5 bg-muted/40 rounded-3xl border border-border/40 backdrop-blur-sm grid grid-cols-4">
+                    <TabsList className="h-16 w-full p-1.5 bg-muted/50 rounded-3xl border border-border/40 grid grid-cols-4">
                         <TabsTrigger value="ALL" className="rounded-2xl font-bold transition-all data-[state=active]:bg-background data-[state=active]:shadow-lg data-[state=active]:text-primary">すべて</TabsTrigger>
                         <TabsTrigger value="MAKE_AHEAD" className="rounded-2xl font-bold transition-all data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-sm">作り置き</TabsTrigger>
                         <TabsTrigger value="LUNCH" className="rounded-2xl font-bold transition-all data-[state=active]:bg-secondary/20 data-[state=active]:text-secondary-foreground data-[state=active]:shadow-sm">お昼</TabsTrigger>
@@ -234,10 +235,6 @@ export function RecipeList({ onSelectRecipe, onCreateNew, onImportSuccess }: { o
                     </TabsList>
                 </Tabs>
 
-            </div>
-
-            {/* 2. Search & Controls */}
-            <div className="flex flex-col gap-3 sticky top-0 md:top-20 z-30 py-3 bg-background/80 backdrop-blur-xl -mx-2 px-2 shadow-[0_4px_30px_rgba(0,0,0,0.02)]">
                 <div className="flex gap-2">
                     <div className="relative flex-1 group">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
