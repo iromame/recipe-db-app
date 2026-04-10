@@ -246,12 +246,7 @@ export function RecipeDetail({ id, onBack, onEdit, onDelete }: { id: string, onB
 				<div className="space-y-6 md:space-y-8">
 					<div className="space-y-4">
 						<div className="flex flex-wrap items-center gap-2 md:gap-3">
-							<Badge variant="outline" className={cn(
-								"px-3 md:px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] border-2 flex items-center gap-2",
-								recipe.cookingMode === 'MAKE_AHEAD' ? 'border-primary/40 text-primary bg-primary/5' :
-									recipe.cookingMode === 'LUNCH' ? 'border-secondary/60 text-secondary-foreground bg-secondary/10' :
-										'border-accent/60 text-accent-foreground bg-accent/10'
-							)}>
+							<Badge variant="outline" className="px-3 md:px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] border-2 bg-primary/5 border-primary/40 text-primary flex items-center gap-2">
 								{recipe.cookingMode === 'MAKE_AHEAD' ? <><CookingPot className="w-3 h-3" /> 作り置き</> : 
                                  recipe.cookingMode === 'LUNCH' ? <><Sun className="w-3 h-3" /> お昼</> : 
                                  <><Moon className="w-3 h-3" /> 晩ごはん</>}

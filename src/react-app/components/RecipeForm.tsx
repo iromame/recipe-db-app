@@ -405,11 +405,11 @@ export function RecipeForm({ id, initialData, onSave, onCancel, onDirtyStateChan
 									<CookingPot className="w-4 h-4" />
 									<span className="hidden sm:inline">作り置き</span>
 								</TabsTrigger>
-								<TabsTrigger value="LUNCH" className="rounded-[1rem] font-black text-[10px] uppercase tracking-widest transition-all data-[state=active]:bg-background data-[state=active]:text-secondary-foreground data-[state=active]:shadow-lg flex items-center gap-2">
+								<TabsTrigger value="LUNCH" className="rounded-[1rem] font-black text-[10px] uppercase tracking-widest transition-all data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-lg flex items-center gap-2">
 									<Sun className="w-4 h-4" />
 									<span className="hidden sm:inline">お昼</span>
 								</TabsTrigger>
-								<TabsTrigger value="DINNER" className="rounded-[1rem] font-black text-[10px] uppercase tracking-widest transition-all data-[state=active]:bg-background data-[state=active]:text-accent-foreground data-[state=active]:shadow-lg flex items-center gap-2">
+								<TabsTrigger value="DINNER" className="rounded-[1rem] font-black text-[10px] uppercase tracking-widest transition-all data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-lg flex items-center gap-2">
 									<Moon className="w-4 h-4" />
 									<span className="hidden sm:inline">晩ごはん</span>
 								</TabsTrigger>
