@@ -180,7 +180,7 @@ export function CookingDetail({ sessionId, onBack }: { sessionId: string, onBack
             </div>
 
             {/* Sticky Footer */}
-            <div className="fixed bottom-0 left-0 right-0 p-4 md:p-6 bg-background/90 backdrop-blur-3xl border-t border-border/40 pb-safe">
+            <div className="fixed bottom-16 left-0 right-0 p-4 md:p-6 bg-background/90 backdrop-blur-3xl border-t border-border/40">
                 <div className="max-w-3xl mx-auto flex justify-end">
                     <Button 
                         size="lg" 
