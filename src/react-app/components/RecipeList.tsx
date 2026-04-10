@@ -21,7 +21,6 @@ export function RecipeList({ onSelectRecipe, onCreateNew, onImportSuccess }: { o
     const [selectedModes, setSelectedModes] = useState<string[]>([]);
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
     const [allTags, setAllTags] = useState<string[]>([]);
-    const [showPinnedOnly, setShowPinnedOnly] = useState(false);
     const [showScrollTop, setShowScrollTop] = useState(false);
     
     type SortAxis = 'updatedAt' | 'createdAt' | 'lastCookedAt' | 'cookCount' | 'prepTime' | 'cookTime';
@@ -72,8 +71,6 @@ export function RecipeList({ onSelectRecipe, onCreateNew, onImportSuccess }: { o
 
     const filteredRecipes = useMemo(() => {
         const filtered = recipes.filter(r => {
-            if (showPinnedOnly && !r.pinned) return false;
-
             // Mode filter (OR condition for multiple selected modes)
             if (selectedModes.length > 0) {
                 if (!r.cookingMode || !selectedModes.includes(r.cookingMode)) return false;
@@ -146,7 +143,7 @@ export function RecipeList({ onSelectRecipe, onCreateNew, onImportSuccess }: { o
         });
 
         return filtered;
-    }, [recipes, searchQuery, selectedModes, selectedTags, showPinnedOnly, sortAxis, sortOrder]);
+    }, [recipes, searchQuery, selectedModes, selectedTags, sortAxis, sortOrder]);
 
     const toggleTag = (tag: string) => {
         setSelectedTags(prev => 
@@ -402,21 +399,7 @@ export function RecipeList({ onSelectRecipe, onCreateNew, onImportSuccess }: { o
                 </Drawer>
                 </div>
                 
-                <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar -mx-2 px-2 sm:mx-0 sm:px-0">
-                    <Badge
-                        variant={showPinnedOnly ? "default" : "outline"}
-                        className={cn(
-                            "px-4 py-2 rounded-2xl cursor-pointer font-bold transition-all shadow-sm active:scale-95 whitespace-nowrap",
-                            showPinnedOnly 
-                                ? "bg-primary text-primary-foreground border-transparent shadow-primary/20" 
-                                : "bg-muted/30 text-muted-foreground hover:bg-muted/80 border-border/40"
-                        )}
-                        onClick={() => setShowPinnedOnly(!showPinnedOnly)}
-                    >
-                        <Pin className={cn("w-4 h-4 mr-2", showPinnedOnly ? "fill-current" : "")} />
-                        ピン留めのみ
-                    </Badge>
-                </div>
+
             </div>
 
             {/* 3. Recipe Grid */}
