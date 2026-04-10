@@ -112,4 +112,8 @@ export const api = {
         });
         return checkResponse(res);
     },
+    getCookingHistory: async (): Promise<{ id: string; recipeId: string; recipeName: string; createdAt: string }[]> => {
+        const res = await safeFetch("/api/cooking-history");
+        return checkResponse(res);
+    },
 };

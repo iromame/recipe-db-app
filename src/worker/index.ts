@@ -406,7 +406,7 @@ app.get("/api/cooking-history", async (c) => {
     .from(cookingEvents)
     .innerJoin(recipes, eq(cookingEvents.recipeId, recipes.id))
     .orderBy(desc(cookingEvents.createdAt))
-    .limit(50)
+    .limit(500)
     .all();
 
     return c.json(history);

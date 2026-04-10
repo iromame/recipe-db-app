@@ -4,8 +4,9 @@ import { RecipeDetail } from "./components/RecipeDetail";
 import { RecipeForm } from "./components/RecipeForm";
 import { CookingQueue } from "./components/CookingQueue";
 import { CookingDetail } from "./components/CookingDetail";
+import { MoreMenu } from "./components/MoreMenu";
 import { useCookingStore } from "./store/useCookingStore";
-import { Utensils, BookOpen } from "lucide-react";
+import { Utensils, BookOpen, MoreHorizontal } from "lucide-react";
 import { Recipe } from "./types/schema.org";
 import {
 	AlertDialog,
@@ -19,7 +20,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import "./App.css";
 
-type ViewState = "list" | "detail" | "form" | "cookingQueue" | "cookingDetail";
+type ViewState = "list" | "detail" | "form" | "cookingQueue" | "cookingDetail" | "more";
 
 function App() {
 	const [view, setView] = useState<ViewState>(() => {
@@ -49,6 +50,8 @@ function App() {
             } else if (viewParam === "cookingDetail" && sessionId) {
                 setCurrentRecipeId(sessionId); // using currentRecipeId as sessionId in this mode
                 setView("cookingDetail");
+            } else if (viewParam === "more") {
+                setView("more");
             } else if (id) {
 				setCurrentRecipeId(id);
 				setImportData(null);
@@ -164,6 +167,19 @@ function App() {
 		});
 	};
 
+	const goToMore = () => {
+		handleSafeNavigation(() => {
+			const newUrl = `${window.location.pathname}?view=more`;
+			if (window.location.search !== `?view=more`) {
+				window.history.pushState({}, "", newUrl);
+			}
+			setCurrentRecipeId(null);
+			setIsFormDirty(false);
+			setView("more");
+			currentUrlRef.current = window.location.href;
+		});
+	};
+
 	return (
 		<div className="min-h-screen bg-background text-foreground font-sans selection:bg-primary/10">
 			<header className="sticky top-0 z-40 w-full bg-background/80 backdrop-blur-xl border-b border-border/40">
@@ -233,12 +249,18 @@ function App() {
                         onBack={() => goToCookingQueue()}
                     />
                 )}
+                {view === "more" && (
+                    <MoreMenu
+                        onSelectRecipe={goToDetail}
+                    />
+                )}
 			</main>
 
 			{/* Bottom Navigation */}
-			{(view === "list" || view === "detail" || view === "cookingQueue") && (
+			{(view === "list" || view === "detail" || view === "cookingQueue" || view === "more") && (
 				<div className="fixed bottom-0 left-0 right-0 z-[100] bg-background/90 backdrop-blur-xl border-t border-border/40 pb-safe shadow-[0_-10px_30px_rgba(0,0,0,0.05)]">
 					<div className="max-w-4xl mx-auto flex h-16">
+						{/* レシピ */}
 						<button
 							onClick={() => goToList()}
 							className={`flex-1 flex flex-col items-center justify-center gap-1 transition-colors ${
@@ -248,6 +270,7 @@ function App() {
 							<BookOpen className="w-5 h-5" />
 							<span className="text-[10px] font-bold tracking-widest">レシピ</span>
 						</button>
+						{/* 調理中 */}
 						<button
 							onClick={() => goToCookingQueue()}
 							className={`flex-1 flex flex-col items-center justify-center gap-1 transition-colors relative ${
@@ -263,6 +286,16 @@ function App() {
 								)}
 							</div>
 							<span className="text-[10px] font-bold tracking-widest">調理中</span>
+						</button>
+						{/* その他 */}
+						<button
+							onClick={() => goToMore()}
+							className={`flex-1 flex flex-col items-center justify-center gap-1 transition-colors ${
+								view === "more" ? "text-primary bg-primary/5" : "text-muted-foreground hover:bg-muted/50"
+							}`}
+						>
+							<MoreHorizontal className="w-5 h-5" />
+							<span className="text-[10px] font-bold tracking-widest">その他</span>
 						</button>
 					</div>
 				</div>
