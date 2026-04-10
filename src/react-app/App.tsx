@@ -5,8 +5,7 @@ import { RecipeForm } from "./components/RecipeForm";
 import { CookingQueue } from "./components/CookingQueue";
 import { CookingDetail } from "./components/CookingDetail";
 import { useCookingStore } from "./store/useCookingStore";
-import { Utensils } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Utensils, BookOpen } from "lucide-react";
 import { Recipe } from "./types/schema.org";
 import {
 	AlertDialog,
@@ -184,24 +183,11 @@ function App() {
 						<p className="hidden sm:block text-[10px] font-bold uppercase tracking-widest text-muted-foreground opacity-60">
 							Recipe Database
 						</p>
-                        <Button
-                            variant="secondary"
-                            onClick={() => goToCookingQueue()}
-                            className="rounded-xl font-bold gap-2 bg-primary/10 text-primary hover:bg-primary/20 shadow-none border-none relative h-9 px-3"
-                        >
-                            <Utensils className="w-4 h-4" />
-                            <span className="hidden sm:inline">調理中</span>
-                            {activeSessions.length > 0 && (
-                                <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-destructive text-destructive-foreground text-[10px] flex items-center justify-center font-black animate-in zoom-in">
-                                    {activeSessions.length}
-                                </span>
-                            )}
-                        </Button>
 					</div>
 				</div>
 			</header>
 
-			<main className="max-w-4xl mx-auto px-4 py-8 md:py-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
+			<main className="max-w-4xl mx-auto px-4 py-8 md:py-12 pb-24 md:pb-24 animate-in fade-in slide-in-from-bottom-4 duration-700">
 				{view === "list" && (
 					<RecipeList
 						onSelectRecipe={goToDetail}
@@ -248,6 +234,39 @@ function App() {
                     />
                 )}
 			</main>
+
+			{/* Bottom Navigation */}
+			{(view === "list" || view === "detail" || view === "cookingQueue") && (
+				<div className="fixed bottom-0 left-0 right-0 z-[100] bg-background/90 backdrop-blur-xl border-t border-border/40 pb-safe shadow-[0_-10px_30px_rgba(0,0,0,0.05)]">
+					<div className="max-w-4xl mx-auto flex h-16">
+						<button
+							onClick={() => goToList()}
+							className={`flex-1 flex flex-col items-center justify-center gap-1 transition-colors ${
+								view === "list" || view === "detail" ? "text-primary" : "text-muted-foreground hover:bg-muted/50"
+							}`}
+						>
+							<BookOpen className="w-5 h-5" />
+							<span className="text-[10px] font-bold tracking-widest">レシピ</span>
+						</button>
+						<button
+							onClick={() => goToCookingQueue()}
+							className={`flex-1 flex flex-col items-center justify-center gap-1 transition-colors relative ${
+								view === "cookingQueue" ? "text-primary bg-primary/5" : "text-muted-foreground hover:bg-muted/50"
+							}`}
+						>
+							<div className="relative">
+								<Utensils className="w-5 h-5" />
+								{activeSessions.length > 0 && (
+									<span className="absolute -top-2 -right-3 min-w-[1rem] h-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[9px] flex items-center justify-center font-black animate-in zoom-in border border-background">
+										{activeSessions.length}
+									</span>
+								)}
+							</div>
+							<span className="text-[10px] font-bold tracking-widest">調理中</span>
+						</button>
+					</div>
+				</div>
+			)}
 
 			<AlertDialog open={showDiscardDialog} onOpenChange={setShowDiscardDialog}>
 				<AlertDialogContent className="rounded-[2rem] border-none bg-background/95 backdrop-blur-3xl shadow-2xl">

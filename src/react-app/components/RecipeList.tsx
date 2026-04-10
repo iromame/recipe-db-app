@@ -327,88 +327,69 @@ export function RecipeList({ onSelectRecipe, onCreateNew, onImportSuccess }: { o
                     </Button>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="flex flex-col border-y border-border/40 divide-y divide-border/40 bg-card rounded-2xl shadow-sm overflow-hidden ring-1 ring-border/20">
                     {filteredRecipes.map((r) => {
                         const prepMin = parseISOToMinutes(r.prepTime || "");
                         const cookMin = parseISOToMinutes(r.cookTime || "");
                         
                         return (
-                            <Card
+                            <div
                                 key={r.id}
                                 onClick={() => r.id && onSelectRecipe(r.id)}
-                                className="group cursor-pointer rounded-[2.5rem] border-none bg-card hover:bg-muted/50 transition-all duration-300 active:scale-[0.97] overflow-hidden shadow-[0_10px_30px_-15px_rgba(0,0,0,0.05)] hover:shadow-[0_20px_40px_-20px_rgba(0,0,0,0.1)] ring-1 ring-border/40"
+                                className="group cursor-pointer flex items-center justify-between p-3.5 hover:bg-muted/30 transition-colors active:bg-muted"
                             >
-                                <div className="p-8 space-y-6">
-                                    <div className="flex justify-between items-start">
-                                        <Badge variant="outline" className={cn(
-                                            "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border-2",
-                                            r.cookingMode === 'MAKE_AHEAD' ? 'border-primary/40 text-primary bg-primary/5' :
-                                            r.cookingMode === 'LUNCH' ? 'border-secondary/60 text-secondary-foreground bg-secondary/10' :
-                                            'border-accent/60 text-accent-foreground bg-accent/10'
-                                        )}>
-                                            {r.cookingMode === 'MAKE_AHEAD' ? '作り置き' : r.cookingMode === 'LUNCH' ? 'お昼' : '晩ごはん'}
-                                        </Badge>
-                                        <div className="flex gap-2 items-center">
-                                            <button
-                                                onClick={(e) => r.id && togglePin(r.id, !!r.pinned, e)}
-                                                className={cn(
-                                                    "p-2 rounded-full transition-colors active:scale-90",
-                                                    r.pinned ? "text-primary bg-primary/10" : "text-muted-foreground/40 hover:text-muted-foreground hover:bg-muted"
-                                                )}
-                                            >
-                                                <Pin className={cn("w-5 h-5", r.pinned ? "fill-current" : "")} />
-                                            </button>
-                                            {r.images && r.images.length > 0 && (
-                                                <div className="flex -space-x-2">
-                                                    {r.images.slice(0, 3).map((img, idx) => (
-                                                        <div key={idx} className="w-6 h-6 rounded-full border-2 border-background bg-muted overflow-hidden">
-                                                            <img src={`/api/images/${img}`} className="w-full h-full object-cover" />
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
+                                <div className="flex items-center gap-3 overflow-hidden flex-1">
+                                    <div className={cn(
+                                        "flex-shrink-0 flex items-center justify-center w-9 h-9 rounded-full border border-border/40 font-black text-sm",
+                                        r.cookingMode === 'MAKE_AHEAD' ? 'bg-primary/10 text-primary border-primary/20' :
+                                        r.cookingMode === 'LUNCH' ? 'bg-secondary/20 text-secondary-foreground border-secondary/20' : 
+                                        'bg-accent/20 text-accent-foreground border-accent/20'
+                                    )}>
+                                        {r.cookingMode === 'MAKE_AHEAD' ? '作' : r.cookingMode === 'LUNCH' ? '昼' : '晩'}
                                     </div>
-
-                                    <h3 className="text-2xl font-black leading-tight tracking-tight group-hover:text-primary transition-colors duration-300">
-                                        {r.name}
-                                    </h3>
-                                    
-                                    <div className="flex flex-wrap items-center gap-4 pt-2 border-t border-border/40">
-                                        {(prepMin > 0 || cookMin > 0) && (
-                                            <div className="flex items-center gap-2 group/time">
-                                                <div className="p-1.5 rounded-lg bg-muted text-muted-foreground group-hover/time:bg-primary/10 group-hover/time:text-primary transition-colors">
-                                                    <Clock className="w-4 h-4" />
-                                                </div>
-                                                <span className="text-xs font-bold tracking-tight">
-                                                    {prepMin > 0 && `${prepMin}m `}
-                                                    {cookMin > 0 && `${cookMin}m`}
-                                                </span>
-                                            </div>
-                                        )}
-                                        
-                                        {r.tags && r.tags.length > 0 && (
-                                            <div className="flex items-center gap-2 overflow-hidden">
-                                                <div className="p-1.5 rounded-lg bg-muted text-muted-foreground">
-                                                    <Tag className="w-4 h-4" />
-                                                </div>
-                                                <div className="flex gap-1 overflow-hidden">
-                                                    {r.tags.map(t => (
-                                                        <span key={t} className="text-[10px] font-bold text-muted-foreground/60 whitespace-nowrap">#{t}</span>
-                                                    ))}
-                                                </div>
+                                    <div className="flex flex-col overflow-hidden flex-1">
+                                        <div className="flex items-center gap-2">
+                                            <h3 className="text-sm sm:text-base font-extrabold truncate group-hover:text-primary transition-colors text-foreground">
+                                                {r.name}
+                                            </h3>
+                                        </div>
+                                        {(prepMin > 0 || cookMin > 0 || (r.tags && r.tags.length > 0)) && (
+                                            <div className="flex items-center gap-2 text-[10px] sm:text-xs text-muted-foreground mt-0.5 truncate font-bold">
+                                                {(prepMin > 0 || cookMin > 0) && (
+                                                    <span className="flex items-center gap-0.5 whitespace-nowrap">
+                                                        <Clock className="w-3 h-3 text-muted-foreground/70" />
+                                                        {prepMin > 0 && `${prepMin}m `}
+                                                        {cookMin > 0 && `${cookMin}m`}
+                                                    </span>
+                                                )}
+                                                {r.tags && r.tags.length > 0 && (
+                                                    <span className="text-muted-foreground/60 truncate">
+                                                        {r.tags.map(t => `#${t}`).join(" ")}
+                                                    </span>
+                                                )}
                                             </div>
                                         )}
                                     </div>
                                 </div>
-                            </Card>
+                                <div className="flex-shrink-0 ml-1">
+                                    <button
+                                        onClick={(e) => r.id && togglePin(r.id, !!r.pinned, e)}
+                                        className={cn(
+                                            "p-2 rounded-full transition-colors active:scale-90 flex items-center justify-center",
+                                            r.pinned ? "text-primary" : "text-transparent group-hover:text-muted-foreground/40"
+                                        )}
+                                    >
+                                        <Pin className={cn("w-4 h-4", r.pinned ? "fill-current" : "")} />
+                                    </button>
+                                </div>
+                            </div>
                         );
                     })}
                 </div>
             )}
             
             {/* Floating FAB for Mobile */}
-            <div className="fixed bottom-8 right-6 z-40 sm:hidden flex flex-col gap-4">
+            <div className="fixed bottom-24 right-6 z-40 sm:hidden flex flex-col gap-4">
                 <RecipeImportDialog onExtractionSuccess={onImportSuccess}>
                     <Button 
                         variant="secondary"
@@ -448,7 +429,7 @@ export function RecipeList({ onSelectRecipe, onCreateNew, onImportSuccess }: { o
 
             {/* Scroll to Top */}
             <div className={cn(
-                "fixed bottom-8 left-1/2 -translate-x-1/2 z-50 transition-all duration-300",
+                "fixed bottom-24 left-1/2 -translate-x-1/2 z-50 transition-all duration-300",
                 showScrollTop ? "translate-y-0 opacity-100" : "translate-y-12 opacity-0 pointer-events-none"
             )}>
                 <Button 

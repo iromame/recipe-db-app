@@ -210,7 +210,7 @@ export function RecipeDetail({ id, onBack, onEdit, onDelete }: { id: string, onB
     };
 
 	return (
-		<div className="bg-background min-h-screen pb-32 animate-in fade-in duration-500">
+		<div className="bg-background min-h-screen pb-48 animate-in fade-in duration-500">
 			{/* 1. Header Navigation */}
 			<div className="bg-background/80 backdrop-blur-2xl border-b border-border/40 sticky top-0 z-40 transition-all">
 				<div className="max-w-3xl mx-auto px-4 h-16 flex justify-between items-center">
@@ -465,7 +465,7 @@ export function RecipeDetail({ id, onBack, onEdit, onDelete }: { id: string, onB
 			</div>
 
             {/* Floating Action Button for Cooking Queue */}
-            <div className="fixed bottom-6 right-6 md:bottom-8 md:right-8 z-50 flex flex-col items-end gap-3 pointer-events-none">
+            <div className="fixed bottom-24 right-6 md:bottom-24 md:right-8 z-50 flex flex-col items-end gap-3 pointer-events-none">
                 {addedToast && (
                     <div className="bg-foreground text-background px-4 py-2 rounded-xl text-sm font-bold shadow-2xl animate-in slide-in-from-bottom-2 fade-in duration-300 pointer-events-auto">
                         調理リストに追加しました
