@@ -219,10 +219,11 @@ export function RecipeForm({ id, initialData, onSave, onCancel, onDirtyStateChan
 
 		if (id) {
 			await api.updateRecipe(id, finalRecipe);
+			onSave({ ...finalRecipe, id });
 		} else {
-			await api.createRecipe(finalRecipe);
+			const savedRecipe = await api.createRecipe(finalRecipe);
+			onSave(savedRecipe);
 		}
-		onSave(finalRecipe);
 	};
 
 	const DrumRollPicker = ({ label, value, field }: { label: string, value: string, field: 'prep' | 'cook' }) => {

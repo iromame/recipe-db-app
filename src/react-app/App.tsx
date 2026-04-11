@@ -6,7 +6,7 @@ import { CookingQueue } from "./components/CookingQueue";
 import { CookingDetail } from "./components/CookingDetail";
 import { MoreMenu } from "./components/MoreMenu";
 import { useCookingStore } from "./store/useCookingStore";
-import { Utensils, BookOpen, MoreHorizontal } from "lucide-react";
+import { Utensils, BookOpen, MoreHorizontal, Check } from "lucide-react";
 import { Recipe } from "./types/schema.org";
 import {
 	AlertDialog,
@@ -35,6 +35,7 @@ function App() {
 	const [isFormDirty, setIsFormDirty] = useState(false);
 	const [showDiscardDialog, setShowDiscardDialog] = useState(false);
 	const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
+	const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
     const { activeSessions } = useCookingStore();
 	const currentUrlRef = useRef(window.location.href);
 
@@ -91,6 +92,11 @@ function App() {
 		} else {
 			action();
 		}
+	};
+
+	const showToast = (message: string, type: "success" | "error" = "success") => {
+		setToast({ message, type });
+		setTimeout(() => setToast(null), 3000);
 	};
 
 	const goToList = (force = false) => {
@@ -225,7 +231,12 @@ function App() {
 						initialData={importData}
 						onSave={(_recipe) => {
 							// Using true to bypass the dirty check during save
-							goToList(true);
+							if (_recipe.id) {
+								showToast("レシピを保存しました");
+								goToDetail(_recipe.id, true);
+							} else {
+								goToList(true);
+							}
 						}}
 						onCancel={() => {
 							if (view === "form" && currentRecipeId) {
@@ -328,6 +339,18 @@ function App() {
 					</AlertDialogFooter>
 				</AlertDialogContent>
 			</AlertDialog>
+
+			{/* Toast Notification */}
+			{toast && (
+				<div className="fixed top-24 left-1/2 -translate-x-1/2 z-[200] animate-in fade-in slide-in-from-top-4 duration-300 pointer-events-none">
+					<div className="bg-foreground/95 backdrop-blur-xl text-background px-6 py-4 rounded-[1.5rem] font-black text-sm shadow-2xl flex items-center gap-3 border border-white/10">
+						<div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
+							<Check className="w-4 h-4 text-primary-foreground stroke-[3px]" />
+						</div>
+						<span className="tracking-tight">{toast.message}</span>
+					</div>
+				</div>
+			)}
 		</div>
 	);
 }
