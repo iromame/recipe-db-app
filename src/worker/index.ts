@@ -202,10 +202,34 @@ app.get("/api/export", async (c) => {
     const allRecipes = await db.select().from(recipes).all();
     const enriched = await attachTags(db, allRecipes);
 
+    let finalRecipes = enriched;
+    if (enriched.length > 0) {
+        // Fetch all cooking events stats grouped by recipe
+        const statsQuery = await db.select({
+            recipeId: cookingEvents.recipeId,
+            count: sql<number>`count(${cookingEvents.id})`,
+            lastCookedAt: sql<string>`max(${cookingEvents.createdAt})`
+        })
+        .from(cookingEvents)
+        .groupBy(cookingEvents.recipeId)
+        .all() as { recipeId: string, count: number, lastCookedAt: string }[];
+
+        const statsMap = new Map(statsQuery.map(s => [s.recipeId, s]));
+
+        finalRecipes = enriched.map(r => {
+            const stats = statsMap.get(r.id);
+            return {
+                ...r,
+                cookCount: stats ? stats.count : 0,
+                lastCookedAt: stats ? stats.lastCookedAt : null,
+            };
+        });
+    }
+
     return c.json({
         version: "1.0",
         exportedAt: new Date().toISOString(),
-        recipes: enriched
+        recipes: finalRecipes
     }, 200, {
         "Content-Disposition": 'attachment; filename="recipes-export.json"'
     });
