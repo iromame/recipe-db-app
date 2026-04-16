@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
-import { Plus, Scale, X, Clock, Utensils, Tag, ImageIcon, Link as LinkIcon, Check, Baby, ChevronLeft, Save, NotepadText, CookingPot, Sun, Moon } from "lucide-react";
+import { Plus, Scale, X, Clock, Utensils, Tag, ImageIcon, Link as LinkIcon, Check, Baby, ChevronLeft, Save, NotepadText, CookingPot, Sun, Moon, Flame } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function RecipeForm({ id, initialData, onSave, onCancel, onDirtyStateChange }: { 
@@ -393,7 +393,7 @@ export function RecipeForm({ id, initialData, onSave, onCancel, onDirtyStateChan
 				<section className="space-y-10">
 					<div className="space-y-4">
 						<div className="flex items-center gap-2 text-muted-foreground/60">
-							<Utensils className="w-4 h-4" />
+							<Flame className="w-4 h-4" />
 							<span className="text-[10px] font-black uppercase tracking-[0.2em]">調理モード / 活用フェーズ</span>
 						</div>
 						<Tabs

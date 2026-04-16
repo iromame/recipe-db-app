@@ -1,6 +1,6 @@
 import { useCookingStore } from "../store/useCookingStore";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, Utensils, X } from "lucide-react";
+import { ChevronLeft, Flame, X } from "lucide-react";
 
 export function CookingQueue({ onBack, onSelectSession }: { onBack: () => void, onSelectSession: (id: string) => void }) {
     const { activeSessions, removeSession } = useCookingStore();
@@ -15,7 +15,7 @@ export function CookingQueue({ onBack, onSelectSession }: { onBack: () => void, 
                         <span>戻る</span>
                     </Button>
                     <h2 className="font-black tracking-tight text-lg flex items-center gap-2">
-                        <Utensils className="w-5 h-5 text-primary" />
+                        <Flame className="w-5 h-5 text-primary" />
                         <span>調理リスト</span>
                     </h2>
                     <div className="w-16" /> {/* Spacer for centering */}
@@ -31,7 +31,7 @@ export function CookingQueue({ onBack, onSelectSession }: { onBack: () => void, 
                 {activeSessions.length === 0 ? (
                     <div className="text-center py-20 px-6 bg-muted/30 rounded-[2.5rem] border border-border/40 border-dashed">
                         <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                            <Utensils className="w-8 h-8 text-primary opacity-80" />
+                            <Flame className="w-8 h-8 text-primary opacity-80" />
                         </div>
                         <h3 className="text-lg font-black mb-2">リストは空です</h3>
                         <p className="text-muted-foreground text-sm">
@@ -52,7 +52,7 @@ export function CookingQueue({ onBack, onSelectSession }: { onBack: () => void, 
                                     </div>
                                 ) : (
                                     <div className="w-16 h-16 rounded-xl flex-shrink-0 bg-primary/10 flex items-center justify-center">
-                                        <Utensils className="w-6 h-6 text-primary/50" />
+                                        <Flame className="w-6 h-6 text-primary/50" />
                                     </div>
                                 )}
                                 <div className="flex-1 min-w-0">

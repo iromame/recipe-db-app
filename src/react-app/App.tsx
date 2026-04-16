@@ -6,7 +6,7 @@ import { CookingQueue } from "./components/CookingQueue";
 import { CookingDetail } from "./components/CookingDetail";
 import { MoreMenu } from "./components/MoreMenu";
 import { useCookingStore } from "./store/useCookingStore";
-import { Utensils, BookOpen, MoreHorizontal, Check } from "lucide-react";
+import { Flame, BookOpen, MoreHorizontal, Check } from "lucide-react";
 import { Recipe } from "./types/schema.org";
 import {
 	AlertDialog,
@@ -289,7 +289,7 @@ function App() {
 							}`}
 						>
 							<div className="relative">
-								<Utensils className="w-5 h-5 transition-transform active:scale-90" />
+								<Flame className="w-5 h-5 transition-transform active:scale-90" />
 								{activeSessions.length > 0 && (
 									<span className="absolute -top-2 -right-3 min-w-[1rem] h-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[9px] flex items-center justify-center font-black animate-in zoom-in border border-background">
 										{activeSessions.length}

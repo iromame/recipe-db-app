@@ -121,24 +121,27 @@ export function RecipeDetail({ id, onBack, onEdit, onDelete }: { id: string, onB
 
     const handleShare = async () => {
         if (!recipe) return;
-        const shareData = {
-            title: `${recipe.name} - Mame`,
-            url: window.location.href,
-        };
+        const shareTitle = `${recipe.name} - Mame`;
+        const shareUrl = window.location.href;
+        const shareText = `${recipe.name}\n${shareUrl}`;
 
         try {
             if (navigator.share) {
-                await navigator.share(shareData);
+                await navigator.share({
+                    title: shareTitle,
+                    text: recipe.name,
+                    url: shareUrl,
+                });
             } else {
-                await navigator.clipboard.writeText(shareData.url);
-                alert("リンクをコピーしました");
+                await navigator.clipboard.writeText(shareText);
+                alert("レシピとリンクをコピーしました");
             }
         } catch (err: any) {
             console.error("Error sharing:", err);
             // Ignore AbortError which happens if user cancels the share dialog
             if (err.name !== 'AbortError') {
-                await navigator.clipboard.writeText(shareData.url).catch(() => {});
-                alert("リンクをコピーしました");
+                await navigator.clipboard.writeText(shareText).catch(() => {});
+                alert("レシピとリンクをコピーしました");
             }
         }
     };

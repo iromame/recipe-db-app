@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Drawer, DrawerClose, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
-import { Download, Plus, AlertCircle, Clock, Search, Filter, X, Tag, Utensils, Sparkles, Pin, ArrowUp, ArrowDown, ListFilter, CookingPot, Sun, Moon } from "lucide-react";
+import { Download, Plus, AlertCircle, Clock, Search, Filter, X, Tag, Utensils, Sparkles, Pin, ArrowUp, ArrowDown, ListFilter, CookingPot, Sun, Moon, Flame } from "lucide-react";
 import { RecipeImportDialog } from "./RecipeImportDialog";
 import { cn } from "@/lib/utils";
 
@@ -331,7 +331,7 @@ export function RecipeList({ onSelectRecipe, onCreateNew, onImportSuccess }: { o
                         <div className="mx-auto w-full max-w-sm space-y-8 mt-4">
                             <div className="space-y-4">
                                 <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
-                                    <Utensils className="w-3 h-3" /> 調理モード
+                                    <Flame className="w-3 h-3" /> 調理モード
                                 </label>
                                 <div className="flex flex-wrap gap-2">
                                     {['MAKE_AHEAD', 'LUNCH', 'DINNER'].map(mode => (
