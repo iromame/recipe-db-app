@@ -503,11 +503,9 @@ export function RecipeList({ onSelectRecipe, onCreateNew, onImportSuccess }: { o
 
             {/* Desktop Export & Add */}
             <div className="hidden sm:flex justify-between items-center pt-10 border-t border-border/40">
-                <Button variant="ghost" asChild className="text-muted-foreground font-bold rounded-xl hover:bg-muted/50">
-                    <a href="/api/export" download>
-                        <Download className="w-4 h-4 mr-2" />
-                        JSON形式で全レシピを出力
-                    </a>
+                <Button variant="ghost" onClick={() => api.exportData().catch(() => alert('Failed to export'))} className="text-muted-foreground font-bold rounded-xl hover:bg-muted/50 cursor-pointer">
+                    <Download className="w-4 h-4 mr-2" />
+                    JSON形式で全レシピを出力
                 </Button>
                 <div className="flex gap-3">
                     <RecipeImportDialog onExtractionSuccess={onImportSuccess}>

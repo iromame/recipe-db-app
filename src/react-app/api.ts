@@ -116,4 +116,22 @@ export const api = {
         const res = await safeFetch("/api/cooking-history");
         return checkResponse(res);
     },
+    exportData: async (): Promise<void> => {
+        const res = await safeFetch("/api/export");
+        if (res.redirected && res.url.includes("cloudflareaccess.com")) {
+            window.location.href = "/cdn-cgi/access/login";
+            throw new Error("Cloudflare Access: Redirecting to login page...");
+        }
+        if (!res.ok) throw new Error("Export failed");
+        
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "recipes-export.json";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    },
 };

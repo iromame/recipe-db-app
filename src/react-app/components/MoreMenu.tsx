@@ -30,14 +30,19 @@ export function MoreMenu({ onSelectRecipe }: { onSelectRecipe: (id: string) => v
                         <ChefHat className="w-4 h-4" />
                         調理履歴
                     </button>
-                    <a
-                        href="/api/export"
-                        download="recipes-export.json"
+                    <button
+                        onClick={async () => {
+                            try {
+                                await import("../api").then(m => m.api.exportData());
+                            } catch(e) {
+                                alert("Failed to export data");
+                            }
+                        }}
                         className="flex-1 flex items-center justify-center gap-2 h-10 rounded-xl text-sm font-black tracking-wide text-muted-foreground hover:text-foreground transition-all"
                     >
                         <Download className="w-4 h-4" />
                         エクスポート
-                    </a>
+                    </button>
                 </div>
 
                 {/* Section Content */}
