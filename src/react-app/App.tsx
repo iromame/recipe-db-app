@@ -5,8 +5,9 @@ import { RecipeForm } from "./components/RecipeForm";
 import { CookingQueue } from "./components/CookingQueue";
 import { CookingDetail } from "./components/CookingDetail";
 import { MoreMenu } from "./components/MoreMenu";
+import { Chat } from "./components/Chat";
 import { useCookingStore } from "./store/useCookingStore";
-import { Flame, BookOpen, MoreHorizontal, Check } from "lucide-react";
+import { Flame, BookOpen, MoreHorizontal, Check, Sparkles } from "lucide-react";
 import { Recipe } from "./types/schema.org";
 import {
 	AlertDialog,
@@ -20,7 +21,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import "./App.css";
 
-type ViewState = "list" | "detail" | "form" | "cookingQueue" | "cookingDetail" | "more";
+type ViewState = "list" | "detail" | "form" | "cookingQueue" | "cookingDetail" | "chat" | "more";
 
 function App() {
 	const [view, setView] = useState<ViewState>(() => {
@@ -51,6 +52,8 @@ function App() {
             } else if (viewParam === "cookingDetail" && sessionId) {
                 setCurrentRecipeId(sessionId); // using currentRecipeId as sessionId in this mode
                 setView("cookingDetail");
+            } else if (viewParam === "chat") {
+                setView("chat");
             } else if (viewParam === "more") {
                 setView("more");
             } else if (id) {
@@ -173,6 +176,19 @@ function App() {
 		});
 	};
 
+	const goToChat = () => {
+		handleSafeNavigation(() => {
+			const newUrl = `${window.location.pathname}?view=chat`;
+			if (window.location.search !== `?view=chat`) {
+				window.history.pushState({}, "", newUrl);
+			}
+			setCurrentRecipeId(null);
+			setIsFormDirty(false);
+			setView("chat");
+			currentUrlRef.current = window.location.href;
+		});
+	};
+
 	const goToMore = () => {
 		handleSafeNavigation(() => {
 			const newUrl = `${window.location.pathname}?view=more`;
@@ -260,6 +276,11 @@ function App() {
                         onBack={() => goToCookingQueue()}
                     />
                 )}
+                {view === "chat" && (
+                    <Chat 
+						onSelectRecipe={goToDetail}
+					/>
+                )}
                 {view === "more" && (
                     <MoreMenu
                         onSelectRecipe={goToDetail}
@@ -268,7 +289,7 @@ function App() {
 			</main>
 
 			{/* Bottom Navigation */}
-			{(view === "list" || view === "detail" || view === "cookingQueue" || view === "cookingDetail" || view === "more") && (
+			{(view === "list" || view === "detail" || view === "cookingQueue" || view === "cookingDetail" || view === "chat" || view === "more") && (
 				<div className="fixed bottom-0 left-0 right-0 z-[100] bg-background/90 backdrop-blur-xl border-t border-border/40 pb-safe shadow-[0_-10px_30px_rgba(0,0,0,0.05)]">
 					<div className="max-w-4xl mx-auto flex h-16">
 						{/* レシピ */}
@@ -297,6 +318,16 @@ function App() {
 								)}
 							</div>
 							<span className="text-[10px] font-black tracking-widest uppercase">調理中</span>
+						</button>
+						{/* チャット */}
+						<button
+							onClick={() => goToChat()}
+							className={`flex-1 flex flex-col items-center justify-center gap-1 transition-all ${
+								view === "chat" ? "text-primary bg-primary/5" : "text-muted-foreground hover:bg-muted/50"
+							}`}
+						>
+							<Sparkles className="w-5 h-5 transition-transform active:scale-90" />
+							<span className="text-[10px] font-black tracking-widest uppercase">チャット</span>
 						</button>
 						{/* その他 */}
 						<button

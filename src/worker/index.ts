@@ -463,4 +463,99 @@ app.get("/api/cooking-history", async (c) => {
     return c.json(history);
 });
 
+// Chat Endpoint with Context Injection
+app.post("/api/chat", async (c) => {
+    const apiKey = (c.env as any).GEMINI_API_KEY;
+    if (!apiKey) return c.json({ error: "Gemini API key is not configured" }, 500);
+
+    const db = drizzle(c.env.recipe_db);
+    const body = await c.req.json();
+    const messages = body.messages || [];
+
+    try {
+        // 1. Gather Context (All Recipes)
+        const allRecipesRaw = await db.select().from(recipes).all();
+        const enrichedRecipes = await attachTags(db, allRecipesRaw);
+        
+        // 2. Gather Context (Cooking History - last 50)
+        const history = await db.select({
+            id: cookingEvents.id,
+            recipeId: cookingEvents.recipeId,
+            createdAt: cookingEvents.createdAt,
+            recipeName: recipes.name,
+        })
+        .from(cookingEvents)
+        .innerJoin(recipes, eq(cookingEvents.recipeId, recipes.id))
+        .orderBy(desc(cookingEvents.createdAt))
+        .limit(50)
+        .all();
+
+        // 3. Format Context
+        const recipesContext = enrichedRecipes.map(r => {
+            let details = [];
+            if (r.recipeIngredient && Array.isArray(r.recipeIngredient)) {
+                details.push(`材料: ${r.recipeIngredient.map((i: any) => i.name).join(', ')}`);
+            }
+            if (r.recipeInstructions) {
+                const instructions = Array.isArray(r.recipeInstructions) 
+                    ? r.recipeInstructions.map((i: any) => i.text).join(' ') 
+                    : r.recipeInstructions;
+                details.push(`作り方: ${instructions}`);
+            }
+            if (r.notes) {
+                details.push(`メモ: ${r.notes}`);
+            }
+            const extra = details.length > 0 ? `\n  詳細: ${details.join(' | ')}` : '';
+            return `- ベーシック情報: ID: ${r.id}, Name: ${r.name}, Mode: ${r.cookingMode}, Tags: [${r.tags.join(', ')}]${extra}`;
+        }).join('\n');
+
+        const historyContext = history.map(h => 
+            `- ${new Date(h.createdAt).toLocaleDateString()}: ${h.recipeName} (ID: ${h.recipeId})`
+        ).join('\n');
+
+        const systemPrompt = `
+あなたはユーザーの専属のAI料理アシスタントです。
+以下のユーザーの「レシピデータベース」と「直近の調理履歴」を元に、献立の提案や質問への回答を行ってください。
+
+【データベースにあるレシピ（全量）】
+${recipesContext}
+
+【直近50件の調理履歴】
+${historyContext}
+
+【重要なルール】
+1. ユーザーに対してレシピを提案・言及する際は、データベースに存在するレシピ名とIDを使い、必ず以下のマークダウン形式のリンクとして出力してください。
+   フォーマット: [Recipe:レシピ名](recipe_id)
+   例: 「では、[Recipe:麻婆豆腐](1234abcd-5678-efgh) はどうでしょうか？」
+   ※ この形式で出力するだけで、アプリ側がタップ可能なボタンに自動変換します。
+2. ユーザーはスマートフォン等の小さな画面で利用するため、簡潔でフレンドリーな言葉遣いを心がけてください。
+3. 季節や現在の時刻を考慮した提案も歓迎します。現在時刻: ${new Date().toLocaleString('ja-JP')}
+4. データベースにない料理を提案する場合は、一般的な料理として提案しつつ、「レシピを新しく登録しますか？」といった声かけをしても構いません（その場合リンク化は不要です）。
+`;
+
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({ 
+            model: "gemini-2.5-flash",
+            systemInstruction: systemPrompt 
+        });
+
+        // Convert messages to Gemini format
+        const chatSession = model.startChat({
+            history: messages.slice(0, -1).map((msg: any) => ({
+                role: msg.role === 'assistant' ? 'model' : 'user',
+                parts: [{ text: msg.content }],
+            })),
+        });
+
+        const lastMessage = messages[messages.length - 1];
+        const result = await chatSession.sendMessage(lastMessage.content);
+        const responseText = result.response.text();
+
+        return c.json({ response: responseText });
+    } catch (e: any) {
+        console.error("Chat Error:", e);
+        return c.json({ error: e.message || "Failed to generate chat response" }, 500);
+    }
+});
+
 export default app;
