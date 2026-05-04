@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect } from "react";
 import { useChatStore } from "../store/useChatStore";
 import { Send, Utensils, Sparkles, Loader2, RefreshCcw } from "lucide-react";
-import React from "react";
+import ReactMarkdown from "react-markdown";
+import type { Components } from "react-markdown";
+import remarkBreaks from "remark-breaks";
 
 interface ChatProps {
 	onSelectRecipe: (id: string) => void;
@@ -64,53 +66,33 @@ export function Chat({ onSelectRecipe }: ChatProps) {
 		}
 	};
 
-	// Helper to parse text with [Recipe:Name](Id) into interactive chips
-	const renderContent = (content: string) => {
-		const parts: React.ReactNode[] = [];
-		const regex = /\[Recipe:(.+?)\]\((.+?)\)/g;
-		let lastIndex = 0;
-		let match;
-
-		while ((match = regex.exec(content)) !== null) {
-			// Text before the match
-			if (match.index > lastIndex) {
-				parts.push(content.substring(lastIndex, match.index));
+	const markdownComponents: Components = {
+		p: ({ children }) => <span className="block mb-2.5 last:mb-0 leading-relaxed">{children}</span>,
+		ul: ({ children }) => <ul className="list-disc list-inside mb-2.5 space-y-1.5 leading-relaxed">{children}</ul>,
+		ol: ({ children }) => <ol className="list-decimal list-inside mb-2.5 space-y-1.5 leading-relaxed">{children}</ol>,
+		li: ({ children }) => <li className="mb-1 ml-1 pl-0.5">{children}</li>,
+		h1: ({ children }) => <h1 className="text-base font-bold mt-4 mb-2">{children}</h1>,
+		h2: ({ children }) => <h2 className="text-sm font-bold mt-3 mb-1.5">{children}</h2>,
+		h3: ({ children }) => <h3 className="text-sm font-semibold mt-2.5 mb-1">{children}</h3>,
+		strong: ({ children }) => <strong className="font-bold">{children}</strong>,
+		a: ({ href, children }) => {
+			if (!children) return <a href={href} className="text-primary underline hover:text-primary/80" target="_blank" rel="noreferrer">{children}</a>;
+			
+			const text = Array.isArray(children) ? children.join('') : String(children);
+			if (text.startsWith("Recipe:")) {
+				const recipeName = text.replace("Recipe:", "");
+				return (
+					<button
+						onClick={() => href && onSelectRecipe(href)}
+						className="inline-flex items-center gap-1.5 px-3 py-1 my-0.5 mx-1 rounded-full bg-primary/10 hover:bg-primary/20 text-primary font-bold text-sm transition-colors active:scale-95 border border-primary/20 shadow-sm align-middle"
+					>
+						<Utensils className="w-3.5 h-3.5 shrink-0" />
+						<span className="truncate max-w-[150px] sm:max-w-xs">{recipeName}</span>
+					</button>
+				);
 			}
-
-			// Interactive Chip
-			const recipeName = match[1];
-			const recipeId = match[2];
-			parts.push(
-				<button
-					key={`recipe-${match.index}`}
-					onClick={() => onSelectRecipe(recipeId)}
-					className="inline-flex items-center gap-1.5 px-3 py-1 mt-1 mb-1 mx-1 rounded-full bg-primary/10 hover:bg-primary/20 text-primary font-bold text-sm transition-colors active:scale-95 border border-primary/20 shadow-sm"
-				>
-					<Utensils className="w-3.5 h-3.5" />
-					<span className="truncate max-w-[150px] sm:max-w-xs">{recipeName}</span>
-				</button>
-			);
-
-			lastIndex = regex.lastIndex;
+			return <a href={href} className="text-primary underline hover:text-primary/80" target="_blank" rel="noreferrer">{children}</a>;
 		}
-
-		// Remaining text
-		if (lastIndex < content.length) {
-			parts.push(content.substring(lastIndex));
-		}
-
-		return parts.map((part, i) => (
-			<React.Fragment key={i}>
-				{typeof part === "string"
-					? part.split("\n").map((line, j) => (
-							<React.Fragment key={`${i}-${j}`}>
-								{line}
-								{j !== part.split("\n").length - 1 && <br />}
-							</React.Fragment>
-					  ))
-					: part}
-			</React.Fragment>
-		));
 	};
 
 	return (
@@ -165,8 +147,14 @@ export function Chat({ onSelectRecipe }: ChatProps) {
 										<span className="text-[10px] font-bold uppercase tracking-wider">AI Assistant</span>
 									</div>
 								)}
-								<div className="text-sm leading-relaxed whitespace-pre-wrap">
-									{msg.role === "assistant" ? renderContent(msg.content) : msg.content}
+								<div className={`text-sm leading-relaxed break-words ${msg.role === "user" ? "whitespace-pre-wrap" : "whitespace-normal"}`}>
+									{msg.role === "assistant" ? (
+										<ReactMarkdown components={markdownComponents} remarkPlugins={[remarkBreaks]}>
+											{msg.content}
+										</ReactMarkdown>
+									) : (
+										msg.content
+									)}
 								</div>
 							</div>
 						</div>
