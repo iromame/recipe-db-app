@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/componen
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+// import removed
 import { Drawer, DrawerClose, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
 import { Download, Plus, AlertCircle, Clock, Search, Filter, X, Tag, Utensils, Sparkles, Pin, ArrowUp, ArrowDown, ListFilter, CookingPot, Sun, Moon, Flame } from "lucide-react";
 import { RecipeImportDialog } from "./RecipeImportDialog";
@@ -219,21 +219,33 @@ export function RecipeList({ onSelectRecipe, onCreateNew, onImportSuccess }: { o
 
             {/* 2. Sticky Header (Tabs + Search & Controls) */}
             <div className="sticky top-16 z-30 flex flex-col gap-3 py-3 bg-background/95 backdrop-blur-lg -mx-2 px-2 shadow-[0_4px_20px_rgba(0,0,0,0.05)] pt-2 md:top-16">
-                <Tabs 
-                    value={selectedModes.length === 0 ? "ALL" : selectedModes.length === 1 ? selectedModes[0] : "MULTIPLE"} 
-                    onValueChange={(val) => {
-                        if (val === "ALL") setSelectedModes([]);
-                        else if (val !== "MULTIPLE") setSelectedModes([val]);
-                    }} 
-                    className="w-full"
-                >
-                    <TabsList className="h-16 w-full p-1.5 bg-muted/50 rounded-3xl border border-border/40 grid grid-cols-4">
-                        <TabsTrigger value="ALL" className="rounded-2xl font-bold transition-all data-[state=active]:bg-background data-[state=active]:shadow-lg data-[state=active]:text-primary">すべて</TabsTrigger>
-                        <TabsTrigger value="MAKE_AHEAD" className="rounded-2xl font-bold transition-all data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-sm">作り置き</TabsTrigger>
-                        <TabsTrigger value="LUNCH" className="rounded-2xl font-bold transition-all data-[state=active]:bg-secondary/20 data-[state=active]:text-secondary-foreground data-[state=active]:shadow-sm">お昼</TabsTrigger>
-                        <TabsTrigger value="DINNER" className="rounded-2xl font-bold transition-all data-[state=active]:bg-accent/20 data-[state=active]:text-accent-foreground data-[state=active]:shadow-sm">晩ごはん</TabsTrigger>
-                    </TabsList>
-                </Tabs>
+                <div className="h-16 w-full p-1.5 bg-muted/50 rounded-3xl border border-border/40 grid grid-cols-4 gap-1">
+                    {[
+                        { id: 'ALL', label: 'すべて' },
+                        { id: 'MAKE_AHEAD', label: '作り置き' },
+                        { id: 'LUNCH', label: 'お昼' },
+                        { id: 'DINNER', label: '晩ごはん' }
+                    ].map(tab => {
+                        const isActive = selectedModes.length === 0 ? tab.id === 'ALL' : selectedModes.length === 1 && selectedModes[0] === tab.id;
+                        return (
+                            <button
+                                key={tab.id}
+                                onClick={() => {
+                                    if (tab.id === 'ALL') setSelectedModes([]);
+                                    else setSelectedModes([tab.id]);
+                                }}
+                                className={cn(
+                                    "flex flex-col items-center justify-center h-full rounded-2xl font-bold transition-all duration-200 select-none",
+                                    isActive 
+                                        ? "bg-background text-primary shadow-sm" 
+                                        : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
+                                )}
+                            >
+                                <span className="leading-none -mt-[2px]">{tab.label}</span>
+                            </button>
+                        );
+                    })}
+                </div>
 
                 <div className="flex gap-2">
                     <div className="relative flex-1 group">
