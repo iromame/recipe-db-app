@@ -216,10 +216,9 @@ export function RecipeList({ onSelectRecipe, onCreateNew, onImportSuccess }: { o
                     {recipes.length} 品のレシピが登録されています
                 </p>
             </div>
-
             {/* 2. Sticky Header (Tabs + Search & Controls) */}
             <div className="sticky top-16 z-30 flex flex-col gap-3 py-3 bg-background/95 backdrop-blur-lg -mx-2 px-2 shadow-[0_4px_20px_rgba(0,0,0,0.05)] pt-2 md:top-16">
-                <div className="h-16 w-full p-1.5 bg-muted/50 rounded-3xl border border-border/40 grid grid-cols-4 gap-1">
+                <div className="h-12 sm:h-14 w-full p-1 bg-muted/50 rounded-full border border-border/40 grid grid-cols-4 gap-1">
                     {[
                         { id: 'ALL', label: 'すべて' },
                         { id: 'MAKE_AHEAD', label: '作り置き' },
@@ -235,13 +234,13 @@ export function RecipeList({ onSelectRecipe, onCreateNew, onImportSuccess }: { o
                                     else setSelectedModes([tab.id]);
                                 }}
                                 className={cn(
-                                    "flex flex-col items-center justify-center h-full rounded-2xl font-bold transition-all duration-200 select-none",
+                                    "flex flex-col items-center justify-center h-full rounded-full transition-all duration-200 select-none text-xs sm:text-sm",
                                     isActive 
-                                        ? "bg-background text-primary shadow-sm" 
-                                        : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
+                                        ? "bg-background text-foreground font-bold shadow-sm ring-1 ring-black/5 dark:ring-white/10" 
+                                        : "text-muted-foreground font-medium hover:text-foreground/80 hover:bg-muted/40"
                                 )}
                             >
-                                <span className="leading-none -mt-[2px]">{tab.label}</span>
+                                <span className="leading-none -mt-[1px]">{tab.label}</span>
                             </button>
                         );
                     })}
