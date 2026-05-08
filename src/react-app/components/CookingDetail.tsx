@@ -3,16 +3,17 @@ import { useCookingStore } from "../store/useCookingStore";
 import { api } from "../api";
 import { Recipe } from "../types/schema.org";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, CheckCircle2, Circle, PartyPopper } from "lucide-react";
+import { ChevronLeft, CheckCircle2, Circle, PartyPopper, BookOpen, Flame } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export function CookingDetail({ sessionId, onBack }: { sessionId: string, onBack: () => void }) {
+export function CookingDetail({ sessionId, onBack, onGoToRecipe }: { sessionId: string, onBack: () => void, onGoToRecipe?: (id: string) => void }) {
     const { activeSessions, removeSession, toggleIngredient, toggleInstruction } = useCookingStore();
     const session = activeSessions.find(s => s.id === sessionId);
     
     const [recipe, setRecipe] = useState<Recipe | null>(null);
     const [loading, setLoading] = useState(true);
     const [showConfetti, setShowConfetti] = useState(false);
+    const [isNotesExpanded, setIsNotesExpanded] = useState(false);
 
     // Wake Lock
     useEffect(() => {
@@ -96,6 +97,12 @@ export function CookingDetail({ sessionId, onBack }: { sessionId: string, onBack
                         <ChevronLeft className="w-5 h-5" />
                         <span>中断して戻る</span>
                     </Button>
+                    {onGoToRecipe && (
+                        <Button variant="ghost" size="sm" onClick={() => onGoToRecipe(session.recipeId)} className="gap-2 rounded-2xl mr-1 font-bold text-primary hover:text-primary/80">
+                            <BookOpen className="w-5 h-5" />
+                            <span className="hidden sm:inline">レシピ詳細へ</span>
+                        </Button>
+                    )}
                 </div>
             </div>
 
@@ -105,9 +112,37 @@ export function CookingDetail({ sessionId, onBack }: { sessionId: string, onBack
                         {recipe.name}
                     </h1>
                     <div className="inline-flex items-center bg-accent/10 text-accent-foreground px-4 py-2 rounded-2xl border border-accent/20 gap-2 shadow-sm font-black text-sm tracking-widest uppercase">
-                        TODO モード
+                        <Flame className="w-4 h-4 text-orange-500" />
+                        調理中モード
                     </div>
                 </div>
+
+                {/* Image */}
+                {recipe.images && recipe.images.length > 0 && recipe.images[0] && (
+                    <div className="w-full aspect-[4/3] sm:aspect-video rounded-3xl overflow-hidden shadow-lg border border-border/40 bg-muted/20">
+                        <img src={`/api/images/${recipe.images[0]}`} alt={recipe.name} className="w-full h-full object-cover" />
+                    </div>
+                )}
+
+                {/* Memo */}
+                {recipe.notes && (
+                    <div className="space-y-3">
+                        <h3 className="text-2xl font-black tracking-tight border-b pb-2">メモ</h3>
+                        <div 
+                            className="bg-card w-full text-left p-5 rounded-3xl border border-border/60 hover:border-primary/40 shadow-sm transition-all cursor-pointer"
+                            onClick={() => setIsNotesExpanded(!isNotesExpanded)}
+                        >
+                            <p className={cn("text-base leading-[1.8] whitespace-pre-wrap text-muted-foreground", !isNotesExpanded && "line-clamp-3")}>
+                                {recipe.notes}
+                            </p>
+                            {!isNotesExpanded && (
+                                <div className="text-primary font-bold text-sm mt-3 flex items-center justify-center gap-1 w-full p-2 bg-primary/5 rounded-xl">
+                                    <span>続きを表示</span>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
 
                 {/* Ingredients TODO */}
                 <div className="space-y-6">

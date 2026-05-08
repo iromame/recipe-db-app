@@ -274,6 +274,7 @@ function App() {
                     <CookingDetail
                         sessionId={currentRecipeId}
                         onBack={() => goToCookingQueue()}
+                        onGoToRecipe={(recipeId) => goToDetail(recipeId)}
                     />
                 )}
                 {view === "chat" && (
