@@ -429,7 +429,6 @@ export function RecipeForm({ id, initialData, onSave, onCancel, onDirtyStateChan
 							onChange={e => setRecipe({ ...recipe, name: e.target.value })}
 							className="h-auto py-4 text-4xl md:text-5xl font-black border-0 border-b-4 border-muted/30 rounded-none bg-transparent focus-visible:ring-0 focus-visible:border-primary px-0 transition-all placeholder:text-muted-foreground/20 leading-tight"
 							required
-							autoFocus
 						/>
 					</div>
 
