@@ -196,6 +196,9 @@ app.delete("/api/recipes/:id", async (c) => {
     return c.json({ success: true });
 });
 
+// Login Redirect (Used to bypass PWA cache and trigger Cloudflare Access login)
+app.get("/api/login", (c) => c.redirect("/"));
+
 // Data Export (10-year vision)
 app.get("/api/export", async (c) => {
     const db = drizzle(c.env.recipe_db);

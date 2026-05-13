@@ -50,7 +50,7 @@ export default defineConfig({
 				]
 			},
 			workbox: {
-				navigateFallbackDenylist: [/^\/api/]
+				navigateFallbackDenylist: [/^\/api/, /^\/cdn-cgi/]
 			}
 		})
 	],

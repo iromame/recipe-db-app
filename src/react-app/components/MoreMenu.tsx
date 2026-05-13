@@ -1,4 +1,4 @@
-import { ChefHat, Download } from "lucide-react";
+import { ChefHat, Download, LogOut } from "lucide-react";
 import { CookingHistory } from "./CookingHistory";
 import { useState } from "react";
 
@@ -42,6 +42,13 @@ export function MoreMenu({ onSelectRecipe }: { onSelectRecipe: (id: string) => v
                     >
                         <Download className="w-4 h-4" />
                         エクスポート
+                    </button>
+                    <button
+                        onClick={() => window.location.href = "/cdn-cgi/access/logout"}
+                        className="flex-1 flex items-center justify-center gap-2 h-10 rounded-xl text-sm font-black tracking-wide text-muted-foreground hover:text-foreground transition-all"
+                    >
+                        <LogOut className="w-4 h-4" />
+                        ログアウト
                     </button>
                 </div>
 

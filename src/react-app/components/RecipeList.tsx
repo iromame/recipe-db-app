@@ -192,7 +192,7 @@ export function RecipeList({ onSelectRecipe, onCreateNew, onImportSuccess }: { o
                 {isSessionExpiredError ? (
                     <Button
                         variant="destructive"
-                        onClick={() => { window.location.href = "/cdn-cgi/access/login"; }}
+                        onClick={() => { window.location.href = "/api/login"; }}
                     >
                         再ログイン
                     </Button>

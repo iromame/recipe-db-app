@@ -21,7 +21,7 @@ const safeFetch = async (input: string, init?: RequestInit): Promise<Response> =
 const checkResponse = async (res: Response) => {
     // Cloudflare Access redirects unauthenticated API requests to its login page (cloudflareaccess.com).
     if (res.redirected && res.url.includes("cloudflareaccess.com")) {
-        window.location.href = "/cdn-cgi/access/login";
+        window.location.href = "/api/login";
         throw new Error("Cloudflare Access: Redirecting to login page...");
     }
 
@@ -30,7 +30,7 @@ const checkResponse = async (res: Response) => {
         // If we get HTML instead of JSON, it's almost certainly the Access login page or an error page.
         // We redirect to the login endpoint to be sure.
         console.warn("Received HTML instead of JSON. Redirecting to Access login.");
-        window.location.href = "/cdn-cgi/access/login";
+        window.location.href = "/api/login";
         throw new Error("Cloudflare Access: Session might have expired. Redirecting to login...");
     }
 
@@ -119,7 +119,7 @@ export const api = {
     exportData: async (): Promise<void> => {
         const res = await safeFetch("/api/export");
         if (res.redirected && res.url.includes("cloudflareaccess.com")) {
-            window.location.href = "/cdn-cgi/access/login";
+            window.location.href = "/api/login";
             throw new Error("Cloudflare Access: Redirecting to login page...");
         }
         if (!res.ok) throw new Error("Export failed");
