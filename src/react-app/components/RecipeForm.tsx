@@ -8,7 +8,17 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
-import { Plus, Scale, X, Clock, Utensils, Tag, ImageIcon, Link as LinkIcon, Check, Baby, ChevronLeft, Save, NotepadText, CookingPot, Sun, Moon, Flame } from "lucide-react";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Plus, Scale, X, Clock, Utensils, Tag, ImageIcon, Link as LinkIcon, Check, Baby, ChevronLeft, Save, NotepadText, CookingPot, Sun, Moon, Flame, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function RecipeForm({ id, initialData, onSave, onCancel, onDirtyStateChange }: { 
@@ -41,6 +51,10 @@ export function RecipeForm({ id, initialData, onSave, onCancel, onDirtyStateChan
 	const [uploading, setUploading] = useState(false);
 	const initialStateRef = useRef<string>("");
 	const [isDirty, setIsDirty] = useState(false);
+	
+	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+	const [deleteInput, setDeleteInput] = useState("");
+	const [isDeleting, setIsDeleting] = useState(false);
 
 	const getFormState = () => JSON.stringify({
 		name: recipe.name || "",
@@ -223,6 +237,19 @@ export function RecipeForm({ id, initialData, onSave, onCancel, onDirtyStateChan
 		} else {
 			const savedRecipe = await api.createRecipe(finalRecipe);
 			onSave(savedRecipe);
+		}
+	};
+
+	const handleDelete = async () => {
+		if (!id) return;
+		setIsDeleting(true);
+		try {
+			await api.deleteRecipe(id);
+			onCancel(); // Use onCancel to go back to list
+		} catch (err) {
+			console.error("Failed to delete", err);
+			alert("削除に失敗しました。");
+			setIsDeleting(false);
 		}
 	};
 
@@ -656,6 +683,23 @@ export function RecipeForm({ id, initialData, onSave, onCancel, onDirtyStateChan
 					</div>
 				</section>
 
+				{id && (
+					<section className="pt-12 pb-24 border-t border-border/20">
+						<div className="flex flex-col items-center gap-4 text-center">
+							<p className="text-xs font-bold text-muted-foreground">このレシピをデータベースから完全に削除します。</p>
+							<Button
+								type="button"
+								variant="destructive"
+								onClick={() => setDeleteDialogOpen(true)}
+								className="h-14 rounded-[1.5rem] px-8 font-black tracking-widest shadow-lg shadow-destructive/20 hover:shadow-destructive/40 transition-all"
+							>
+								<Trash2 className="w-5 h-5 mr-2" />
+								レシピを削除する
+							</Button>
+						</div>
+					</section>
+				)}
+
 				{/* Fixed Bottom UI (Thumb Zone) */}
 				<div className="fixed bottom-0 left-0 right-0 p-4 md:p-6 bg-background/80 backdrop-blur-3xl border-t border-border/20 z-50">
 					<div className="max-w-2xl mx-auto grid grid-cols-2 gap-4">
@@ -677,6 +721,50 @@ export function RecipeForm({ id, initialData, onSave, onCancel, onDirtyStateChan
 					</div>
 				</div>
 			</form>
+
+			<AlertDialog open={deleteDialogOpen} onOpenChange={(open) => {
+				setDeleteDialogOpen(open);
+				if (!open) setDeleteInput("");
+			}}>
+				<AlertDialogContent className="rounded-[2rem] border-none bg-background/95 backdrop-blur-3xl shadow-2xl">
+					<AlertDialogHeader className="space-y-4">
+						<AlertDialogTitle className="text-2xl font-black tracking-tight text-destructive flex items-center gap-2">
+							<Trash2 className="w-6 h-6" />
+							レシピの削除
+						</AlertDialogTitle>
+						<AlertDialogDescription className="text-muted-foreground font-bold">
+							本当にこのレシピを削除しますか？この操作は取り消せません。<br/><br/>
+							確認のため、下の入力欄に <strong className="text-foreground">削除</strong> と入力してください。
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<div className="my-4">
+						<Input
+							value={deleteInput}
+							onChange={(e) => setDeleteInput(e.target.value)}
+							placeholder="削除"
+							className="h-14 text-center text-xl font-black rounded-[1.5rem] bg-muted/30 focus-visible:ring-destructive focus-visible:border-destructive placeholder:text-muted-foreground/30"
+						/>
+					</div>
+					<AlertDialogFooter className="mt-4 gap-3">
+						<AlertDialogCancel className="h-14 rounded-full font-black tracking-widest border-border/40 hover:bg-muted">
+							キャンセル
+						</AlertDialogCancel>
+						<AlertDialogAction
+							onClick={(e) => {
+								if (deleteInput !== "削除" || isDeleting) {
+									e.preventDefault();
+									return;
+								}
+								handleDelete();
+							}}
+							disabled={deleteInput !== "削除" || isDeleting}
+							className="h-14 rounded-full font-black tracking-widest bg-destructive text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50"
+						>
+							{isDeleting ? "削除中..." : "完全に削除する"}
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 		</div>
 	);
 }

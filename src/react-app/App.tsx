@@ -238,7 +238,6 @@ function App() {
 						id={currentRecipeId}
 						onBack={() => goToList()}
 						onEdit={goToForm}
-						onDelete={() => goToList(true)}
 					/>
 				)}
 				{view === "form" && (

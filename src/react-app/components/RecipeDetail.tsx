@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext, type CarouselApi } from "@/components/ui/carousel";
-import { ChevronLeft, Edit, Trash2, Sun, ExternalLink, Clock, Utensils, Tag, NotepadText, Copy, Check, Share2, Scale, Pin, ListPlus, CookingPot, Moon } from "lucide-react";
+import { ChevronLeft, Edit, Sun, ExternalLink, Clock, Utensils, Tag, NotepadText, Copy, Check, Share2, Scale, Pin, ListPlus, CookingPot, Moon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCookingStore } from "../store/useCookingStore";
 
@@ -31,7 +31,7 @@ function CopyButton({ text, label }: { text: string, label?: string }) {
     );
 }
 
-export function RecipeDetail({ id, onBack, onEdit, onDelete }: { id: string, onBack: () => void, onEdit: (id: string) => void, onDelete: (id: string) => void }) {
+export function RecipeDetail({ id, onBack, onEdit }: { id: string, onBack: () => void, onEdit: (id: string) => void }) {
     const [recipe, setRecipe] = useState<Recipe | null>(null);
     const [loading, setLoading] = useState(true);
     const [wakeLockEnabled, setWakeLockEnabled] = useState(false);
@@ -100,12 +100,7 @@ export function RecipeDetail({ id, onBack, onEdit, onDelete }: { id: string, onB
             .finally(() => setLoading(false));
     }, [id]);
 
-    const handleDelete = async () => {
-        if (confirm("Are you sure you want to delete this recipe?")) {
-            await api.deleteRecipe(id);
-            onDelete(id);
-        }
-    };
+
 
     const handleTogglePin = async () => {
         if (!recipe) return;
@@ -237,9 +232,7 @@ export function RecipeDetail({ id, onBack, onEdit, onDelete }: { id: string, onB
 						<Button variant="ghost" size="icon" onClick={() => onEdit(id)} className="rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all" title="編集">
 							<Edit className="w-5 h-5" />
 						</Button>
-						<Button variant="ghost" size="icon" onClick={handleDelete} className="rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-all" title="削除">
-							<Trash2 className="w-5 h-5" />
-						</Button>
+
 					</div>
 				</div>
 			</div>
