@@ -41,6 +41,7 @@ export function RecipeDetail({ id, onBack, onEdit }: { id: string, onBack: () =>
     const [isOpen, setIsOpen] = useState(false);
     const [isAddingToQueue, setIsAddingToQueue] = useState(false);
     const [addedToast, setAddedToast] = useState(false);
+    const [mdCopied, setMdCopied] = useState(false);
     const { addSession } = useCookingStore();
 
     useEffect(() => {
@@ -207,6 +208,30 @@ export function RecipeDetail({ id, onBack, onEdit }: { id: string, onBack: () =>
         return instructions.map((step: any, idx: number) => `${idx + 1}. ${step.text}`).join("\n");
     };
 
+    const getRecipeMdText = () => {
+        const parts = [];
+        parts.push(`# ${recipe.name}\n`);
+        if (recipe.url) {
+            parts.push(`**出典:** ${recipe.url}\n`);
+        }
+        parts.push(`## 材料\n${getIngredientsText() || "材料なし"}\n`);
+        parts.push(`## 作り方\n${getInstructionsText() || "手順なし"}\n`);
+        if (recipe.notes) {
+            parts.push(`## メモ\n${recipe.notes}\n`);
+        }
+        return parts.join("\n");
+    };
+
+    const handleCopyMD = async () => {
+        try {
+            await navigator.clipboard.writeText(getRecipeMdText());
+            setMdCopied(true);
+            setTimeout(() => setMdCopied(false), 2000);
+        } catch (err) {
+            console.error("Failed to copy MD", err);
+        }
+    };
+
 	return (
 		<div className="bg-background min-h-screen pb-48 animate-in fade-in duration-500">
 			{/* 1. Header Navigation */}
@@ -217,6 +242,9 @@ export function RecipeDetail({ id, onBack, onEdit }: { id: string, onBack: () =>
 						<span>戻る</span>
 					</Button>
 					<div className="flex gap-1.5">
+                        <Button variant="ghost" size="icon" onClick={handleCopyMD} className="rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all" title="RecipeMD形式でコピー">
+                            {mdCopied ? <Check className="w-5 h-5 text-green-500" /> : <Copy className="w-5 h-5" />}
+                        </Button>
 						<Button 
                             variant="ghost" 
                             size="icon" 
