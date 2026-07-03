@@ -16,7 +16,7 @@ export interface AgeCategory {
 export interface Recipe {
     id?: string;
     name: string;
-    cookingMode: "MAKE_AHEAD" | "LUNCH" | "DINNER";
+    cookingMode: ("MAKE_AHEAD" | "LUNCH" | "DINNER")[];
     recipeCategory?: string;
     tags?: string[];
     prepTime?: string;

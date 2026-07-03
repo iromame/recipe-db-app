@@ -270,11 +270,13 @@ export function RecipeDetail({ id, onBack, onEdit }: { id: string, onBack: () =>
 				<div className="space-y-6 md:space-y-8">
 					<div className="space-y-4">
 						<div className="flex flex-wrap items-center gap-2 md:gap-3">
-							<Badge variant="outline" className="px-3 md:px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] border-2 bg-primary/5 border-primary/40 text-primary flex items-center gap-2">
-								{recipe.cookingMode === 'MAKE_AHEAD' ? <><CookingPot className="w-3 h-3" /> 作り置き</> : 
-                                 recipe.cookingMode === 'LUNCH' ? <><Sun className="w-3 h-3" /> お昼</> : 
-                                 <><Moon className="w-3 h-3" /> 晩ごはん</>}
-							</Badge>
+							{(recipe.cookingMode || []).map(mode => (
+								<Badge key={mode} variant="outline" className="px-3 md:px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] border-2 bg-primary/5 border-primary/40 text-primary flex items-center gap-2">
+									{mode === 'MAKE_AHEAD' ? <><CookingPot className="w-3 h-3" /> 作り置き</> : 
+									 mode === 'LUNCH' ? <><Sun className="w-3 h-3" /> お昼</> : 
+									 <><Moon className="w-3 h-3" /> 晩ごはん</>}
+								</Badge>
+							))}
 							{recipe.tags?.map(t => (
 								<Badge key={t} variant="secondary" className="px-3 md:px-4 py-1.5 bg-muted/40 text-muted-foreground/80 rounded-full text-[10px] font-bold tracking-tight border-none">
 									#{t}

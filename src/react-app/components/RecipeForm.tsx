@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
 import {
@@ -30,7 +30,7 @@ export function RecipeForm({ id, initialData, onSave, onCancel, onDirtyStateChan
 }) {
 	const [recipe, setRecipe] = useState<Partial<Recipe>>(initialData || {
 		name: "",
-		cookingMode: "MAKE_AHEAD",
+		cookingMode: ["MAKE_AHEAD"],
 		recipeCategory: "",
 		tags: [],
 		prepTime: "",
@@ -58,7 +58,7 @@ export function RecipeForm({ id, initialData, onSave, onCancel, onDirtyStateChan
 
 	const getFormState = () => JSON.stringify({
 		name: recipe.name || "",
-		cookingMode: recipe.cookingMode || "MAKE_AHEAD",
+		cookingMode: [...(recipe.cookingMode || ["MAKE_AHEAD"])].sort().join(","),
 		recipeCategory: recipe.recipeCategory || "",
 		tags: [...(recipe.tags || [])].sort(),
 		prepTime: recipe.prepTime || "",
@@ -178,7 +178,7 @@ export function RecipeForm({ id, initialData, onSave, onCancel, onDirtyStateChan
 				}
 			}).finally(() => setLoading(false));
 		} else if (initialData) {
-			setRecipe(prev => ({ ...prev, ...initialData, cookingMode: initialData.cookingMode || "MAKE_AHEAD" }));
+			setRecipe(prev => ({ ...prev, ...initialData, cookingMode: initialData.cookingMode || ["MAKE_AHEAD"] }));
 			if (initialData.recipeIngredient) {
 				const ings = initialData.recipeIngredient;
 				setIngredientsText(Array.isArray(ings) ? ings.map((i: any) => i.name).join("\n") : "");
@@ -214,10 +214,11 @@ export function RecipeForm({ id, initialData, onSave, onCancel, onDirtyStateChan
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		if (!recipe.name) return alert("名前は必須です。");
+		if (!recipe.cookingMode || recipe.cookingMode.length === 0) return alert("調理モードは少なくとも1つ選択してください。");
 
 		const finalRecipe: Recipe = {
 			name: recipe.name!,
-			cookingMode: recipe.cookingMode as any || "DINNER",
+			cookingMode: recipe.cookingMode as any || ["DINNER"],
 			recipeCategory: recipe.recipeCategory,
 			tags: recipe.tags,
 			prepTime: recipe.prepTime,
@@ -423,26 +424,34 @@ export function RecipeForm({ id, initialData, onSave, onCancel, onDirtyStateChan
 							<Flame className="w-4 h-4" />
 							<span className="text-[10px] font-black uppercase tracking-[0.2em]">調理モード / 活用フェーズ</span>
 						</div>
-						<Tabs
-							value={recipe.cookingMode || "DINNER"}
-							onValueChange={(val) => setRecipe({ ...recipe, cookingMode: val as any })}
-							className="w-full"
-						>
-							<TabsList className="grid w-full grid-cols-3 h-16 p-1.5 bg-muted/40 rounded-[1.5rem] border border-border/20 shadow-inner">
-								<TabsTrigger value="MAKE_AHEAD" className="rounded-[1rem] font-black text-[10px] uppercase tracking-widest transition-all data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-lg flex items-center gap-2">
-									<CookingPot className="w-4 h-4" />
-									<span className="hidden sm:inline">作り置き</span>
-								</TabsTrigger>
-								<TabsTrigger value="LUNCH" className="rounded-[1rem] font-black text-[10px] uppercase tracking-widest transition-all data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-lg flex items-center gap-2">
-									<Sun className="w-4 h-4" />
-									<span className="hidden sm:inline">お昼</span>
-								</TabsTrigger>
-								<TabsTrigger value="DINNER" className="rounded-[1rem] font-black text-[10px] uppercase tracking-widest transition-all data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-lg flex items-center gap-2">
-									<Moon className="w-4 h-4" />
-									<span className="hidden sm:inline">晩ごはん</span>
-								</TabsTrigger>
-							</TabsList>
-						</Tabs>
+						<div className="grid grid-cols-3 gap-2 w-full h-16 p-1.5 bg-muted/40 rounded-[1.5rem] border border-border/20 shadow-inner">
+							{[
+								{ value: "MAKE_AHEAD", label: "作り置き", icon: CookingPot },
+								{ value: "LUNCH", label: "お昼", icon: Sun },
+								{ value: "DINNER", label: "晩ごはん", icon: Moon }
+							].map(mode => {
+								const isActive = (recipe.cookingMode || []).includes(mode.value as any);
+								return (
+									<button
+										key={mode.value}
+										type="button"
+										onClick={() => {
+											const current = recipe.cookingMode || [];
+											if (isActive && current.length === 1) return; // 最後の1つは解除できないようにする
+											const next = isActive ? current.filter(m => m !== mode.value) : [...current, mode.value];
+											setRecipe({ ...recipe, cookingMode: next as any });
+										}}
+										className={cn(
+											"rounded-[1rem] font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2",
+											isActive ? "bg-background text-primary shadow-lg" : "text-muted-foreground hover:bg-muted/60"
+										)}
+									>
+										<mode.icon className="w-4 h-4" />
+										<span className="hidden sm:inline">{mode.label}</span>
+									</button>
+								);
+							})}
+						</div>
 					</div>
 
 					<div className="space-y-4">

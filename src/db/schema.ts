@@ -3,7 +3,7 @@ import { sqliteTable, text, integer, primaryKey } from "drizzle-orm/sqlite-core"
 export const recipes = sqliteTable("recipes", {
     id: text("id").primaryKey(),
     name: text("name").notNull(),
-    cookingMode: text("cooking_mode", { enum: ["MAKE_AHEAD", "LUNCH", "DINNER"] }).notNull().default("DINNER"),
+    cookingMode: text("cooking_mode").notNull().default("DINNER"),
     recipeCategory: text("recipe_category"), // Keep for migration/compatibility for a while
     prepTime: text("prep_time"), // ISO 8601 duration
     cookTime: text("cook_time"), // ISO 8601 duration

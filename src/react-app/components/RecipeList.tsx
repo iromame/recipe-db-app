@@ -71,9 +71,8 @@ export function RecipeList({ onSelectRecipe, onCreateNew, onImportSuccess }: { o
 
     const filteredRecipes = useMemo(() => {
         const filtered = recipes.filter(r => {
-            // Mode filter (OR condition for multiple selected modes)
             if (selectedModes.length > 0) {
-                if (!r.cookingMode || !selectedModes.includes(r.cookingMode)) return false;
+                if (!r.cookingMode || !selectedModes.some(m => (r.cookingMode as string[]).includes(m))) return false;
             }
             
             // Tags filter (AND condition)
@@ -449,8 +448,8 @@ export function RecipeList({ onSelectRecipe, onCreateNew, onImportSuccess }: { o
                             >
                                 <div className="flex items-center gap-3 overflow-hidden flex-1">
                                     <div className="flex-shrink-0 flex items-center justify-center w-9 h-9 rounded-full bg-primary/10 text-primary border border-primary/20 shadow-sm shadow-primary/5 transition-shadow">
-                                        {r.cookingMode === 'MAKE_AHEAD' ? <CookingPot className="w-5 h-5" /> : 
-                                         r.cookingMode === 'LUNCH' ? <Sun className="w-5 h-5" /> : 
+                                        {r.cookingMode?.[0] === 'MAKE_AHEAD' ? <CookingPot className="w-5 h-5" /> : 
+                                         r.cookingMode?.[0] === 'LUNCH' ? <Sun className="w-5 h-5" /> : 
                                          <Moon className="w-5 h-5" />}
                                     </div>
                                     <div className="flex flex-col overflow-hidden flex-1">

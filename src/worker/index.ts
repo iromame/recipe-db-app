@@ -58,16 +58,34 @@ async function attachTags(db: any, recipeList: any[]) {
         return acc;
     }, {});
 
-    return recipeList.map((r: any) => ({
+    return recipeList.map((r: any) => {
+        let mode = r.cookingMode;
+        if (typeof mode === 'string') {
+            try {
+                const parsed = JSON.parse(mode);
+                mode = Array.isArray(parsed) ? parsed : [parsed];
+            } catch {
+                mode = [mode]; // Plain string fallback
+            }
+        } else if (mode && !Array.isArray(mode)) {
+            mode = [mode];
+        }
+
+        if (!mode || mode.length === 0) {
+            mode = r.recipeCategory?.includes("昼") ? ["LUNCH"] : r.recipeCategory?.includes("作り置き") ? ["MAKE_AHEAD"] : ["MAKE_AHEAD"];
+        }
+
+        return {
         ...r,
-        cookingMode: r.cookingMode || (r.recipeCategory?.includes("昼") ? "LUNCH" : r.recipeCategory?.includes("作り置き") ? "MAKE_AHEAD" : "MAKE_AHEAD"),
+        cookingMode: mode,
         tags: tagLookup[r.id] || [],
         recipeIngredient: typeof r.recipeIngredient === 'string' ? JSON.parse(r.recipeIngredient) : r.recipeIngredient,
         recipeInstructions: typeof r.recipeInstructions === 'string' ? JSON.parse(r.recipeInstructions) : r.recipeInstructions,
         images: typeof r.images === 'string' ? JSON.parse(r.images) : r.images,
         suitableForKids: typeof r.suitableForKids === 'string' ? JSON.parse(r.suitableForKids) : r.suitableForKids,
         structuredData: typeof r.structuredData === 'string' ? JSON.parse(r.structuredData) : r.structuredData,
-    }));
+        };
+    });
 }
 
 app.get("/api/recipes", async (c) => {
@@ -123,7 +141,7 @@ app.post("/api/recipes", async (c) => {
     const newRecipe = {
         id: newId,
         name: body.name || "Untitled Recipe",
-        cookingMode: body.cookingMode || "MAKE_AHEAD",
+        cookingMode: JSON.stringify(body.cookingMode && body.cookingMode.length > 0 ? body.cookingMode : ["MAKE_AHEAD"]),
         pinned: body.pinned || false,
         recipeCategory: body.recipeCategory || null,
         prepTime: body.prepTime || null,
@@ -144,7 +162,7 @@ app.post("/api/recipes", async (c) => {
         await syncTags(db, newId, body.tags);
     }
 
-    return c.json({ ...newRecipe, tags: body.tags || [] }, 201);
+    return c.json({ ...newRecipe, cookingMode: body.cookingMode && body.cookingMode.length > 0 ? body.cookingMode : ["MAKE_AHEAD"], tags: body.tags || [] }, 201);
 });
 
 app.put("/api/recipes/:id", async (c) => {
@@ -154,7 +172,7 @@ app.put("/api/recipes/:id", async (c) => {
 
     const updateData: any = {};
     if (body.name !== undefined) updateData.name = body.name;
-    if (body.cookingMode !== undefined) updateData.cookingMode = body.cookingMode;
+    if (body.cookingMode !== undefined) updateData.cookingMode = JSON.stringify(body.cookingMode);
     if (body.pinned !== undefined) updateData.pinned = body.pinned;
     if (body.recipeCategory !== undefined) updateData.recipeCategory = body.recipeCategory;
     if (body.prepTime !== undefined) updateData.prepTime = body.prepTime;
@@ -351,7 +369,11 @@ app.post("/api/recipes/extract", async (c) => {
                 description: { type: SchemaType.STRING, description: "簡単な説明文" },
                 prepTime: { type: SchemaType.STRING, description: "準備時間 (ISO 8601, 例: PT15M)" },
                 cookTime: { type: SchemaType.STRING, description: "調理時間 (ISO 8601, 例: PT20M)" },
-                cookingMode: { type: SchemaType.STRING, description: "用途（MAKE_AHEAD, LUNCH, DINNER のいずれかを選択）" },
+                cookingMode: { 
+                    type: SchemaType.ARRAY, 
+                    items: { type: SchemaType.STRING },
+                    description: "用途（MAKE_AHEAD, LUNCH, DINNER のいずれかを選択、複数選択可）" 
+                },
                 recipeIngredient: {
                     type: SchemaType.ARRAY,
                     items: {
