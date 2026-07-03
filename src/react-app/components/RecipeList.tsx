@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useLayoutEffect } from "react";
 import { api, SESSION_EXPIRED_ERROR } from "../api";
 import { Recipe } from "../types/schema.org";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
@@ -10,24 +10,26 @@ import { Drawer, DrawerClose, DrawerContent, DrawerTrigger } from "@/components/
 import { Download, Plus, AlertCircle, Clock, Search, Filter, X, Tag, Utensils, Sparkles, Pin, ArrowUp, ArrowDown, ListFilter, CookingPot, Sun, Moon, Flame } from "lucide-react";
 import { RecipeImportDialog } from "./RecipeImportDialog";
 import { cn } from "@/lib/utils";
+import { useRecipeListStore, SortAxis, SortOrder } from "../store/useRecipeListStore";
 
 export function RecipeList({ onSelectRecipe, onCreateNew, onImportSuccess }: { onSelectRecipe: (id: string) => void, onCreateNew: () => void, onImportSuccess: (data: any) => void }) {
     const [recipes, setRecipes] = useState<Recipe[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    // Filters state
-    const [searchQuery, setSearchQuery] = useState("");
-    const [selectedModes, setSelectedModes] = useState<string[]>([]);
-    const [selectedTags, setSelectedTags] = useState<string[]>([]);
+    // Filters state from global store
+    const {
+        searchQuery, setSearchQuery,
+        selectedModes, setSelectedModes,
+        selectedTags, setSelectedTags,
+        sortAxis, setSortAxis,
+        sortOrder, setSortOrder,
+        scrollPosition, setScrollPosition
+    } = useRecipeListStore();
+
     const [allTags, setAllTags] = useState<string[]>([]);
     const [showScrollTop, setShowScrollTop] = useState(false);
-    
-    type SortAxis = 'updatedAt' | 'createdAt' | 'lastCookedAt' | 'cookCount' | 'prepTime' | 'cookTime';
-    type SortOrder = 'desc' | 'asc';
-    const [sortAxis, setSortAxis] = useState<SortAxis>('updatedAt');
-    const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
-    
+
     const SORT_OPTIONS: { value: SortAxis; label: string }[] = [
         { value: 'updatedAt', label: '更新日時' },
         { value: 'createdAt', label: '登録日時' },
@@ -38,13 +40,32 @@ export function RecipeList({ onSelectRecipe, onCreateNew, onImportSuccess }: { o
     ];
     const currentSortLabel = SORT_OPTIONS.find(o => o.value === sortAxis)?.label || '更新日時';
 
+    // Scroll Position Restoration
+    useLayoutEffect(() => {
+        if (!loading && scrollPosition > 0) {
+            // Restore scroll only once after initial load completes
+            window.scrollTo(0, scrollPosition);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [loading]);
+
     useEffect(() => {
+        let timeoutId: number;
         const handleScroll = () => {
             setShowScrollTop(window.scrollY > 300);
+            
+            // Debounce scroll position saving
+            window.clearTimeout(timeoutId);
+            timeoutId = window.setTimeout(() => {
+                setScrollPosition(window.scrollY);
+            }, 100);
         };
-        window.addEventListener("scroll", handleScroll);
-        return () => window.removeEventListener("scroll", handleScroll);
-    }, []);
+        window.addEventListener("scroll", handleScroll, { passive: true });
+        return () => {
+            window.removeEventListener("scroll", handleScroll);
+            window.clearTimeout(timeoutId);
+        };
+    }, [setScrollPosition]);
 
     const scrollToTop = () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -313,7 +334,7 @@ export function RecipeList({ onSelectRecipe, onCreateNew, onImportSuccess }: { o
                 <Button 
                     title="昇順/降順を切り替え"
                     variant="outline" 
-                    onClick={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
+                    onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
                     className="h-14 px-3 min-w-[3.5rem] rounded-2xl flex-shrink-0 bg-muted/30 border-none shadow-inner relative transition-all active:scale-95 text-foreground flex flex-col items-center justify-center gap-1"
                 >
                     {sortOrder === 'desc' ? <ArrowDown className="h-5 w-5" /> : <ArrowUp className="h-5 w-5" />}
