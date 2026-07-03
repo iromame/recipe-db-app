@@ -10,7 +10,7 @@ import { Drawer, DrawerClose, DrawerContent, DrawerTrigger } from "@/components/
 import { Download, Plus, AlertCircle, Clock, Search, Filter, X, Tag, Utensils, Sparkles, Pin, ArrowUp, ArrowDown, ListFilter, CookingPot, Sun, Moon, Flame } from "lucide-react";
 import { RecipeImportDialog } from "./RecipeImportDialog";
 import { cn } from "@/lib/utils";
-import { useRecipeListStore, SortAxis, SortOrder } from "../store/useRecipeListStore";
+import { useRecipeListStore, SortAxis } from "../store/useRecipeListStore";
 
 export function RecipeList({ onSelectRecipe, onCreateNew, onImportSuccess }: { onSelectRecipe: (id: string) => void, onCreateNew: () => void, onImportSuccess: (data: any) => void }) {
     const [recipes, setRecipes] = useState<Recipe[]>([]);
