@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext, type CarouselApi } from "@/components/ui/carousel";
-import { ChevronLeft, Edit, Sun, ExternalLink, Clock, Utensils, Tag, NotepadText, Copy, Check, Share2, Scale, Pin, ListPlus, CookingPot, Moon } from "lucide-react";
+import { ChevronLeft, Edit, Sun, ExternalLink, Clock, Utensils, Tag, NotepadText, Copy, Check, Share2, Scale, Pin, ListPlus, CookingPot, Moon, ShoppingCart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCookingStore } from "../store/useCookingStore";
+import { useShoppingListStore } from "../store/useShoppingListStore";
 
 function CopyButton({ text, label }: { text: string, label?: string }) {
     const [copied, setCopied] = useState(false);
@@ -41,8 +42,10 @@ export function RecipeDetail({ id, onBack, onEdit }: { id: string, onBack: () =>
     const [isOpen, setIsOpen] = useState(false);
     const [isAddingToQueue, setIsAddingToQueue] = useState(false);
     const [addedToast, setAddedToast] = useState(false);
+    const [cartToast, setCartToast] = useState<{show: boolean, msg: string}>({show: false, msg: ""});
     const [mdCopied, setMdCopied] = useState(false);
     const { addSession } = useCookingStore();
+    const { addMultipleItems } = useShoppingListStore();
 
     useEffect(() => {
         if (!carouselApi) return;
@@ -181,6 +184,29 @@ export function RecipeDetail({ id, onBack, onEdit }: { id: string, onBack: () =>
     const ingredients = parseJson(recipe?.recipeIngredient);
     const instructions = parseJson(recipe?.recipeInstructions);
     const yieldData = parseJson(recipe?.recipeYield);
+
+    const handleAddToCart = async () => {
+        if (!recipe || !ingredients) return;
+        const items = ingredients.map((ing: any) => {
+            const parts = [ing.name];
+            if (ing.amount) parts.push(ing.amount);
+            if (ing.unit) parts.push(ing.unit);
+            const baseText = parts.join(" ");
+            
+            return {
+                recipeId: recipe.id,
+                recipeName: recipe.name,
+                name: baseText,
+                baseName: baseText,
+                multiplier: 1,
+                isChecked: false
+            };
+        });
+        
+        await addMultipleItems(items);
+        setCartToast({ show: true, msg: `買い物リストに追加しました` });
+        setTimeout(() => setCartToast({ show: false, msg: "" }), 3000);
+    };
 
     if (loading) return <div className="p-12 text-center animate-pulse text-muted-foreground">Loading recipe details...</div>;
     if (!recipe) return <div className="p-12 text-center text-destructive font-bold">Recipe not found.</div>;
@@ -487,26 +513,42 @@ export function RecipeDetail({ id, onBack, onEdit }: { id: string, onBack: () =>
 				</div>
 			</div>
 
-            {/* Floating Action Button for Cooking Queue */}
+            {/* Floating Action Button for Cooking Queue & Shopping Cart */}
             <div className="fixed bottom-24 right-6 md:bottom-24 md:right-8 z-50 flex flex-col items-end gap-3 pointer-events-none">
                 {addedToast && (
                     <div className="bg-foreground text-background px-4 py-2 rounded-xl text-sm font-bold shadow-2xl animate-in slide-in-from-bottom-2 fade-in duration-300 pointer-events-auto">
                         調理リストに追加しました
                     </div>
                 )}
-                <Button 
-                    size="lg" 
-                    onClick={handleAddToCookingList} 
-                    disabled={isAddingToQueue}
-                    className="h-14 px-6 rounded-full shadow-xl shadow-primary/25 bg-primary text-primary-foreground hover:bg-primary/90 font-black tracking-widest gap-2 pointer-events-auto"
-                >
-                    {isAddingToQueue ? (
-                        <div className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                        <ListPlus className="w-5 h-5" />
-                    )}
-                    <span>調理する</span>
-                </Button>
+                {cartToast.show && (
+                    <div className="bg-primary text-primary-foreground px-4 py-2 rounded-xl text-sm font-bold shadow-2xl animate-in slide-in-from-bottom-2 fade-in duration-300 pointer-events-auto">
+                        {cartToast.msg}
+                    </div>
+                )}
+                
+                <div className="flex flex-col gap-3 pointer-events-auto">
+                    <Button 
+                        size="lg" 
+                        onClick={handleAddToCart}
+                        className="h-14 w-14 rounded-full shadow-xl bg-background text-foreground hover:bg-muted font-black border border-border/40 shrink-0"
+                    >
+                        <ShoppingCart className="w-5 h-5" />
+                    </Button>
+
+                    <Button 
+                        size="lg" 
+                        onClick={handleAddToCookingList} 
+                        disabled={isAddingToQueue}
+                        className="h-14 px-6 rounded-full shadow-xl shadow-primary/25 bg-primary text-primary-foreground hover:bg-primary/90 font-black tracking-widest gap-2"
+                    >
+                        {isAddingToQueue ? (
+                            <div className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                            <ListPlus className="w-5 h-5" />
+                        )}
+                        <span>調理する</span>
+                    </Button>
+                </div>
             </div>
 		</div>
 	);

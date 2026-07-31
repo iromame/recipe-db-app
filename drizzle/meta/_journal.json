@@ -71,6 +71,20 @@
       "when": 1775189577940,
       "tag": "0009_tiny_ink",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1785449411847,
+      "tag": "0010_rapid_moonstone",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1785488103517,
+      "tag": "0011_brief_living_tribunal",
+      "breakpoints": true
     }
   ]
 }

@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { drizzle } from "drizzle-orm/d1";
 import { eq, inArray, desc, sql } from "drizzle-orm";
-import { recipes, tags, recipeTags, cookingEvents } from "../db/schema";
+import { recipes, tags, recipeTags, cookingEvents, shoppingListItems } from "../db/schema";
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 
 const app = new Hono<{ Bindings: Env }>();
@@ -486,6 +486,93 @@ app.get("/api/cooking-history", async (c) => {
     .all();
 
     return c.json(history);
+});
+
+// Shopping List API
+app.get("/api/shopping-list", async (c) => {
+    const db = drizzle(c.env.recipe_db);
+    const list = await db.select().from(shoppingListItems).orderBy(desc(shoppingListItems.createdAt)).all();
+    return c.json(list);
+});
+
+app.post("/api/shopping-list", async (c) => {
+    const db = drizzle(c.env.recipe_db);
+    const body = await c.req.json();
+    const items = Array.isArray(body) ? body : [body];
+    
+    if (items.length === 0) return c.json({ success: true, count: 0 }, 201);
+
+    const newItems = items.map(item => ({
+        id: crypto.randomUUID(),
+        recipeId: item.recipeId || null,
+        recipeName: item.recipeName || null,
+        name: item.name,
+        baseName: item.baseName || item.name,
+        multiplier: item.multiplier || 1.0,
+        isChecked: item.isChecked || false,
+        createdAt: new Date(),
+    }));
+
+    await db.insert(shoppingListItems).values(newItems).run();
+    return c.json({ success: true, count: newItems.length }, 201);
+});
+
+app.put("/api/shopping-list/bulk", async (c) => {
+    const db = drizzle(c.env.recipe_db);
+    const body = await c.req.json();
+    const items = Array.isArray(body) ? body : [body];
+    
+    try {
+        for (const item of items) {
+            const updateData: any = {};
+            if (item.name !== undefined) updateData.name = item.name;
+            if (item.multiplier !== undefined) updateData.multiplier = item.multiplier;
+            if (item.baseName !== undefined) updateData.baseName = item.baseName;
+            if (item.isChecked !== undefined) updateData.isChecked = item.isChecked;
+            
+            await db.update(shoppingListItems).set(updateData).where(eq(shoppingListItems.id, item.id)).run();
+        }
+        
+        return c.json({ success: true });
+    } catch (e: any) {
+        return c.json({ success: false, error: e.message || e.toString() }, 500);
+    }
+});
+
+app.put("/api/shopping-list/:id", async (c) => {
+    const db = drizzle(c.env.recipe_db);
+    const id = c.req.param("id");
+    const body = await c.req.json();
+    
+    const updateData: any = {};
+    if (body.isChecked !== undefined) updateData.isChecked = body.isChecked;
+    if (body.name !== undefined) updateData.name = body.name;
+    if (body.baseName !== undefined) updateData.baseName = body.baseName;
+    if (body.multiplier !== undefined) updateData.multiplier = body.multiplier;
+    
+    await db.update(shoppingListItems).set(updateData).where(eq(shoppingListItems.id, id)).run();
+    return c.json({ success: true });
+});
+
+
+app.delete("/api/shopping-list/checked", async (c) => {
+    const db = drizzle(c.env.recipe_db);
+    await db.delete(shoppingListItems).where(eq(shoppingListItems.isChecked, true)).run();
+    return c.json({ success: true });
+});
+
+app.delete("/api/shopping-list/recipe/:recipeId", async (c) => {
+    const db = drizzle(c.env.recipe_db);
+    const recipeId = c.req.param("recipeId");
+    await db.delete(shoppingListItems).where(eq(shoppingListItems.recipeId, recipeId)).run();
+    return c.json({ success: true });
+});
+
+app.delete("/api/shopping-list/:id", async (c) => {
+    const db = drizzle(c.env.recipe_db);
+    const id = c.req.param("id");
+    await db.delete(shoppingListItems).where(eq(shoppingListItems.id, id)).run();
+    return c.json({ success: true });
 });
 
 // Chat Endpoint with Context Injection

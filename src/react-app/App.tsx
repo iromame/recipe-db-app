@@ -6,8 +6,9 @@ import { CookingQueue } from "./components/CookingQueue";
 import { CookingDetail } from "./components/CookingDetail";
 import { MoreMenu } from "./components/MoreMenu";
 import { Chat } from "./components/Chat";
+import { ShoppingList } from "./components/ShoppingList";
 import { useCookingStore } from "./store/useCookingStore";
-import { Flame, BookOpen, MoreHorizontal, Check, Sparkles } from "lucide-react";
+import { Flame, BookOpen, MoreHorizontal, Check, Sparkles, ShoppingCart } from "lucide-react";
 import { Recipe } from "./types/schema.org";
 import {
 	AlertDialog,
@@ -21,7 +22,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import "./App.css";
 
-type ViewState = "list" | "detail" | "form" | "cookingQueue" | "cookingDetail" | "chat" | "more";
+type ViewState = "list" | "detail" | "form" | "cookingQueue" | "cookingDetail" | "chat" | "more" | "shopping";
 
 function App() {
 	const [view, setView] = useState<ViewState>(() => {
@@ -56,6 +57,8 @@ function App() {
                 setView("chat");
             } else if (viewParam === "more") {
                 setView("more");
+            } else if (viewParam === "shopping") {
+                setView("shopping");
             } else if (id) {
 				setCurrentRecipeId(id);
 				setImportData(null);
@@ -202,6 +205,19 @@ function App() {
 		});
 	};
 
+	const goToShopping = () => {
+		handleSafeNavigation(() => {
+			const newUrl = `${window.location.pathname}?view=shopping`;
+			if (window.location.search !== `?view=shopping`) {
+				window.history.pushState({}, "", newUrl);
+			}
+			setCurrentRecipeId(null);
+			setIsFormDirty(false);
+			setView("shopping");
+			currentUrlRef.current = window.location.href;
+		});
+	};
+
 	return (
 		<div className="min-h-screen bg-background text-foreground font-sans selection:bg-primary/10">
 			<header className="sticky top-0 z-40 w-full bg-background/80 backdrop-blur-xl border-b border-border/40">
@@ -286,10 +302,13 @@ function App() {
                         onSelectRecipe={goToDetail}
                     />
                 )}
+                {view === "shopping" && (
+                    <ShoppingList />
+                )}
 			</main>
 
 			{/* Bottom Navigation */}
-			{(view === "list" || view === "detail" || view === "cookingQueue" || view === "cookingDetail" || view === "chat" || view === "more") && (
+			{(view === "list" || view === "detail" || view === "cookingQueue" || view === "cookingDetail" || view === "chat" || view === "shopping" || view === "more") && (
 				<div className="fixed bottom-0 left-0 right-0 z-[100] bg-background/90 backdrop-blur-xl border-t border-border/40 pb-safe shadow-[0_-10px_30px_rgba(0,0,0,0.05)]">
 					<div className="max-w-4xl mx-auto flex h-16">
 						{/* レシピ */}
@@ -328,6 +347,16 @@ function App() {
 						>
 							<Sparkles className="w-5 h-5 transition-transform active:scale-90" />
 							<span className="text-[10px] font-black tracking-widest uppercase">チャット</span>
+						</button>
+						{/* 買い物 */}
+						<button
+							onClick={() => goToShopping()}
+							className={`flex-1 flex flex-col items-center justify-center gap-1 transition-all ${
+								view === "shopping" ? "text-primary bg-primary/5" : "text-muted-foreground hover:bg-muted/50"
+							}`}
+						>
+							<ShoppingCart className="w-5 h-5 transition-transform active:scale-90" />
+							<span className="text-[10px] font-black tracking-widest uppercase">買い物</span>
 						</button>
 						{/* その他 */}
 						<button

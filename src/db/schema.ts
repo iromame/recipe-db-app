@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, primaryKey } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, real, primaryKey } from "drizzle-orm/sqlite-core";
 
 export const recipes = sqliteTable("recipes", {
     id: text("id").primaryKey(),
@@ -45,6 +45,19 @@ export const cookingEvents = sqliteTable("cooking_events", {
     recipeId: text("recipe_id")
         .notNull()
         .references(() => recipes.id, { onDelete: "cascade" }),
+    createdAt: integer("created_at", { mode: "timestamp" })
+        .notNull()
+        .default(new Date()),
+});
+
+export const shoppingListItems = sqliteTable("shopping_list_items", {
+    id: text("id").primaryKey(),
+    recipeId: text("recipe_id"), // Nullable for manual items
+    recipeName: text("recipe_name"), // Nullable for manual items
+    name: text("name").notNull(), // The full text of the item (e.g. "Pork 200g")
+    baseName: text("base_name"),
+    multiplier: real("multiplier").default(1.0),
+    isChecked: integer("is_checked", { mode: "boolean" }).notNull().default(false),
     createdAt: integer("created_at", { mode: "timestamp" })
         .notNull()
         .default(new Date()),
