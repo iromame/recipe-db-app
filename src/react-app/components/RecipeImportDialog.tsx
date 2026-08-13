@@ -94,7 +94,7 @@ export function RecipeImportDialog({ children, onExtractionSuccess }: { children
                                     placeholder="https://..." 
                                     value={url}
                                     onChange={e => setUrl(e.target.value)}
-                                    className="h-14 rounded-2xl bg-background border-border/40 font-bold px-4"
+                                    className="h-14 rounded-2xl bg-background border-border/40 font-bold px-4 placeholder:font-normal placeholder:text-muted-foreground/50"
                                 />
                                 <p className="text-xs text-muted-foreground mt-4 font-bold opacity-80">
                                     対応サイトのURLを貼り付けてください。タイトル、材料、手順を自動で読み取ります。
@@ -133,7 +133,7 @@ export function RecipeImportDialog({ children, onExtractionSuccess }: { children
                                     placeholder="材料：&#10;豚肉 200g&#10;...&#10;&#10;作り方：&#10;1. 炒める..."
                                     value={text}
                                     onChange={e => setText(e.target.value)}
-                                    className="min-h-[160px] rounded-2xl bg-background border-border/40 font-bold p-4 resize-none"
+                                    className="min-h-[160px] rounded-2xl bg-background border-border/40 font-bold p-4 resize-none placeholder:font-normal placeholder:text-muted-foreground/50"
                                 />
                             </div>
                         </TabsContent>

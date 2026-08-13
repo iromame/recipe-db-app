@@ -513,7 +513,15 @@ app.post("/api/shopping-list", async (c) => {
         createdAt: new Date(),
     }));
 
-    await db.insert(shoppingListItems).values(newItems).run();
+    // Cloudflare D1 has a limit of 100 bound parameters per query.
+    // Each item has 8 columns, so 13 items = 104 parameters, which exceeds the limit.
+    // We must chunk the inserts.
+    const chunkSize = 10;
+    for (let i = 0; i < newItems.length; i += chunkSize) {
+        const chunk = newItems.slice(i, i + chunkSize);
+        await db.insert(shoppingListItems).values(chunk).run();
+    }
+    
     return c.json({ success: true, count: newItems.length }, 201);
 });
 
@@ -558,6 +566,12 @@ app.put("/api/shopping-list/:id", async (c) => {
 app.delete("/api/shopping-list/checked", async (c) => {
     const db = drizzle(c.env.recipe_db);
     await db.delete(shoppingListItems).where(eq(shoppingListItems.isChecked, true)).run();
+    return c.json({ success: true });
+});
+
+app.delete("/api/shopping-list/all", async (c) => {
+    const db = drizzle(c.env.recipe_db);
+    await db.delete(shoppingListItems).run();
     return c.json({ success: true });
 });
 

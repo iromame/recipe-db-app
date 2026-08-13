@@ -203,9 +203,14 @@ export function RecipeDetail({ id, onBack, onEdit }: { id: string, onBack: () =>
             };
         });
         
-        await addMultipleItems(items);
-        setCartToast({ show: true, msg: `買い物リストに追加しました` });
-        setTimeout(() => setCartToast({ show: false, msg: "" }), 3000);
+        try {
+            await addMultipleItems(items);
+            setCartToast({ show: true, msg: `買い物リストに追加しました` });
+            setTimeout(() => setCartToast({ show: false, msg: "" }), 3000);
+        } catch (err) {
+            console.error(err);
+            alert("買い物リストへの追加に失敗しました");
+        }
     };
 
     if (loading) return <div className="p-12 text-center animate-pulse text-muted-foreground">Loading recipe details...</div>;
@@ -526,20 +531,23 @@ export function RecipeDetail({ id, onBack, onEdit }: { id: string, onBack: () =>
                     </div>
                 )}
                 
-                <div className="flex flex-col gap-3 pointer-events-auto">
+                <div className="flex items-center shadow-2xl shadow-primary/30 rounded-full bg-primary text-primary-foreground overflow-hidden pointer-events-auto">
                     <Button 
                         size="lg" 
+                        variant="ghost"
                         onClick={handleAddToCart}
-                        className="h-14 w-14 rounded-full shadow-xl bg-background text-foreground hover:bg-muted font-black border border-border/40 shrink-0"
+                        className="h-14 px-5 rounded-none font-bold hover:bg-primary-foreground/10 shrink-0 gap-2 text-primary-foreground"
                     >
                         <ShoppingCart className="w-5 h-5" />
+                        <span>メモへ</span>
                     </Button>
-
+                    <div className="w-[1px] h-8 bg-primary-foreground/20 shrink-0" />
                     <Button 
                         size="lg" 
+                        variant="ghost"
                         onClick={handleAddToCookingList} 
                         disabled={isAddingToQueue}
-                        className="h-14 px-6 rounded-full shadow-xl shadow-primary/25 bg-primary text-primary-foreground hover:bg-primary/90 font-black tracking-widest gap-2"
+                        className="h-14 px-6 rounded-none font-black tracking-widest gap-2 hover:bg-primary-foreground/10 text-primary-foreground"
                     >
                         {isAddingToQueue ? (
                             <div className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />

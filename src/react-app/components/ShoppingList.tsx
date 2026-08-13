@@ -4,8 +4,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Plus, List, Layers, X, Copy, ChevronDown, Trash2 } from "lucide-react";
+import { Plus, List, Layers, X, Copy, ChevronDown, AlertTriangle, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const applyMultiplier = (text: string, multiplier: number): string => {
     if (multiplier === 1) return text;
@@ -93,13 +103,15 @@ function EditableItem({ item }: { item: ShoppingListItem }) {
 export function ShoppingList() {
     const { 
         items, loading, fetchItems, addItem, bulkUpdateItems,
-        deleteRecipeItems, deleteCheckedItems 
+        deleteRecipeItems, deleteAllItems
     } = useShoppingListStore();
     
     const [viewMode, setViewMode] = useState<"grouped" | "flat">("grouped");
     const [newItemName, setNewItemName] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [copiedToast, setCopiedToast] = useState(false);
+    const [recipeToDelete, setRecipeToDelete] = useState<string | null>(null);
+    const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
 
     useEffect(() => {
         fetchItems();
@@ -114,7 +126,7 @@ export function ShoppingList() {
         setIsSubmitting(false);
     };
 
-    const handleMultiplierChange = async (recipeId: string, newMultiplier: number, groupItems: ShoppingListItem[]) => {
+    const handleMultiplierChange = async (newMultiplier: number, groupItems: ShoppingListItem[]) => {
         const updatedItems = groupItems.map(item => ({
             id: item.id,
             multiplier: newMultiplier,
@@ -145,15 +157,10 @@ export function ShoppingList() {
         return acc;
     }, {} as Record<string, { recipeName: string, items: ShoppingListItem[], multiplier: number }>);
 
-    const checkedCount = items.filter(i => i.isChecked).length;
-
     return (
         <div className="max-w-3xl mx-auto space-y-8 animate-in fade-in duration-500 pb-24">
             <div className="space-y-2">
                 <h1 className="text-3xl md:text-4xl font-black tracking-tighter">買い物メモ</h1>
-                <p className="text-muted-foreground text-sm font-bold">
-                    スワイプでアイテムを削除できます。
-                </p>
             </div>
 
             {/* View Toggle & Actions */}
@@ -177,15 +184,15 @@ export function ShoppingList() {
                     </Button>
                 </div>
                 
-                {checkedCount > 0 && (
+                {items.length > 0 && (
                     <Button 
                         variant="outline" 
                         size="sm" 
-                        onClick={() => deleteCheckedItems()}
+                        onClick={() => setShowDeleteAllConfirm(true)}
                         className="text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/20 gap-2 font-bold"
                     >
                         <Trash2 className="w-4 h-4" />
-                        チェック済みを削除 ({checkedCount})
+                        すべて削除
                     </Button>
                 )}
             </div>
@@ -235,7 +242,7 @@ export function ShoppingList() {
                                                         {[1, 1.5, 2, 3, 4, 5].map(m => (
                                                             <DropdownMenuItem 
                                                                 key={m} 
-                                                                onClick={() => handleMultiplierChange(recipeId, m, group.items)}
+                                                                onClick={() => handleMultiplierChange(m, group.items)}
                                                                 className={cn("font-bold cursor-pointer rounded-xl", group.multiplier === m && "bg-muted text-primary")}
                                                             >
                                                                 {m}倍量
@@ -247,7 +254,7 @@ export function ShoppingList() {
                                                 <Button 
                                                     variant="ghost" 
                                                     size="sm" 
-                                                    onClick={() => deleteRecipeItems(recipeId)}
+                                                    onClick={() => setRecipeToDelete(recipeId)}
                                                     className="h-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0 gap-1 rounded-xl"
                                                 >
                                                     <X className="w-4 h-4" /> 削除
@@ -283,6 +290,64 @@ export function ShoppingList() {
                     </>
                 )}
             </div>
+            
+            <AlertDialog open={recipeToDelete !== null} onOpenChange={(open) => !open && setRecipeToDelete(null)}>
+                <AlertDialogContent className="rounded-[2rem] border-none bg-background/95 backdrop-blur-3xl shadow-2xl">
+                    <AlertDialogHeader className="space-y-4">
+                        <AlertDialogTitle className="text-2xl font-black tracking-tight flex items-center gap-2">
+                            <AlertTriangle className="w-6 h-6 text-destructive" />
+                            本当に削除しますか？
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="text-muted-foreground font-bold">
+                            このレシピの買い物メモをすべて削除します。この操作は取り消せません。
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="mt-8 gap-3">
+                        <AlertDialogCancel className="h-14 rounded-full font-black tracking-widest border-border/40 hover:bg-muted">
+                            キャンセル
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={() => {
+                                if (recipeToDelete) {
+                                    deleteRecipeItems(recipeToDelete);
+                                    setRecipeToDelete(null);
+                                }
+                            }}
+                            className="h-14 rounded-full font-black tracking-widest bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                            削除する
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+            
+            <AlertDialog open={showDeleteAllConfirm} onOpenChange={setShowDeleteAllConfirm}>
+                <AlertDialogContent className="rounded-[2rem] border-none bg-background/95 backdrop-blur-3xl shadow-2xl">
+                    <AlertDialogHeader className="space-y-4">
+                        <AlertDialogTitle className="text-2xl font-black tracking-tight flex items-center gap-2">
+                            <AlertTriangle className="w-6 h-6 text-destructive" />
+                            すべてのメモを削除しますか？
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="text-muted-foreground font-bold">
+                            買い物メモにあるすべてのアイテムを削除します。この操作は取り消せません。
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="mt-8 gap-3">
+                        <AlertDialogCancel className="h-14 rounded-full font-black tracking-widest border-border/40 hover:bg-muted">
+                            キャンセル
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={() => {
+                                deleteAllItems();
+                                setShowDeleteAllConfirm(false);
+                            }}
+                            className="h-14 rounded-full font-black tracking-widest bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                            すべて削除する
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
             
             {/* Floating Toast for Copy */}
             <div className={cn(

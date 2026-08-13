@@ -8,6 +8,7 @@ import { MoreMenu } from "./components/MoreMenu";
 import { Chat } from "./components/Chat";
 import { ShoppingList } from "./components/ShoppingList";
 import { useCookingStore } from "./store/useCookingStore";
+import { useShoppingListStore } from "./store/useShoppingListStore";
 import { Flame, BookOpen, MoreHorizontal, Check, Sparkles, ShoppingCart } from "lucide-react";
 import { Recipe } from "./types/schema.org";
 import {
@@ -39,7 +40,12 @@ function App() {
 	const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
 	const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
     const { activeSessions } = useCookingStore();
+	const { items: shoppingItems, fetchItems: fetchShoppingItems } = useShoppingListStore();
 	const currentUrlRef = useRef(window.location.href);
+
+	useEffect(() => {
+		fetchShoppingItems();
+	}, [fetchShoppingItems]);
 
 	useEffect(() => {
 		const processNavigation = () => {
@@ -218,6 +224,9 @@ function App() {
 		});
 	};
 
+	const uncheckedShoppingItems = shoppingItems.filter(i => !i.isChecked);
+	const activeShoppingBadgeCount = new Set(uncheckedShoppingItems.map(i => i.recipeId).filter(Boolean)).size + (uncheckedShoppingItems.some(i => !i.recipeId) ? 1 : 0);
+
 	return (
 		<div className="min-h-screen bg-background text-foreground font-sans selection:bg-primary/10">
 			<header className="sticky top-0 z-40 w-full bg-background/80 backdrop-blur-xl border-b border-border/40">
@@ -355,7 +364,14 @@ function App() {
 								view === "shopping" ? "text-primary bg-primary/5" : "text-muted-foreground hover:bg-muted/50"
 							}`}
 						>
-							<ShoppingCart className="w-5 h-5 transition-transform active:scale-90" />
+							<div className="relative">
+								<ShoppingCart className="w-5 h-5 transition-transform active:scale-90" />
+								{activeShoppingBadgeCount > 0 && (
+									<span className="absolute -top-2 -right-3 min-w-[1rem] h-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[9px] flex items-center justify-center font-black animate-in zoom-in border border-background">
+										{activeShoppingBadgeCount}
+									</span>
+								)}
+							</div>
 							<span className="text-[10px] font-black tracking-widest uppercase">買い物</span>
 						</button>
 						{/* その他 */}

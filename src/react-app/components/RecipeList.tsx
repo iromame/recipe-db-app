@@ -5,12 +5,91 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/componen
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 // import removed
 import { Drawer, DrawerClose, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
-import { Download, Plus, AlertCircle, Clock, Search, Filter, X, Tag, Utensils, Sparkles, Pin, ArrowUp, ArrowDown, ListFilter, CookingPot, Sun, Moon, Flame } from "lucide-react";
+import { Download, Plus, AlertCircle, Clock, Search, Filter, X, Tag, Utensils, Sparkles, Pin, ArrowUp, ArrowDown, ListFilter, CookingPot, Sun, Moon, Flame, ShoppingCart } from "lucide-react";
 import { RecipeImportDialog } from "./RecipeImportDialog";
 import { cn } from "@/lib/utils";
 import { useRecipeListStore, SortAxis } from "../store/useRecipeListStore";
+import { useShoppingListStore } from "../store/useShoppingListStore";
+import { useCookingStore } from "../store/useCookingStore";
+import { useLongPress } from "../hooks/useLongPress";
+
+const parseISOToMinutes = (iso: string) => {
+    const match = iso?.match(/PT(\d+)M/);
+    return match ? parseInt(match[1]) : 0;
+};
+
+function RecipeRow({ 
+    r, 
+    onSelectRecipe, 
+    togglePin, 
+    onLongPress 
+}: { 
+    r: Recipe, 
+    onSelectRecipe: (id: string) => void, 
+    togglePin: (id: string, isPinned: boolean, e: React.MouseEvent) => void, 
+    onLongPress: (r: Recipe) => void 
+}) {
+    const prepMin = parseISOToMinutes(r.prepTime || "");
+    const cookMin = parseISOToMinutes(r.cookTime || "");
+    
+    const longPressProps = useLongPress(() => {
+        onLongPress(r);
+    }, () => {
+        if (r.id) onSelectRecipe(r.id);
+    });
+
+    return (
+        <div
+            {...longPressProps}
+            className="group cursor-pointer flex items-center justify-between p-3.5 hover:bg-muted/30 transition-colors active:bg-muted select-none"
+        >
+            <div className="flex items-center gap-3 overflow-hidden flex-1 pointer-events-none">
+                <div className="flex-shrink-0 flex items-center justify-center w-9 h-9 rounded-full bg-primary/10 text-primary border border-primary/20 shadow-sm shadow-primary/5 transition-shadow">
+                    {r.cookingMode?.[0] === 'MAKE_AHEAD' ? <CookingPot className="w-5 h-5" /> : 
+                     r.cookingMode?.[0] === 'LUNCH' ? <Sun className="w-5 h-5" /> : 
+                     <Moon className="w-5 h-5" />}
+                </div>
+                <div className="flex flex-col overflow-hidden flex-1">
+                    <div className="flex items-center gap-2">
+                        <h3 className="text-sm sm:text-base font-extrabold truncate group-hover:text-primary transition-colors text-foreground">
+                            {r.name}
+                        </h3>
+                    </div>
+                    {(prepMin > 0 || cookMin > 0 || (r.tags && r.tags.length > 0)) && (
+                        <div className="flex items-center gap-2 text-[10px] sm:text-xs text-muted-foreground mt-0.5 truncate font-bold">
+                            {(prepMin > 0 || cookMin > 0) && (
+                                <span className="flex items-center gap-0.5 whitespace-nowrap">
+                                    <Clock className="w-3 h-3 text-muted-foreground/70" />
+                                    {prepMin > 0 && `${prepMin}m `}
+                                    {cookMin > 0 && `${cookMin}m`}
+                                </span>
+                            )}
+                            {r.tags && r.tags.length > 0 && (
+                                <span className="text-muted-foreground/60 truncate">
+                                    {r.tags.map(t => `#${t}`).join(" ")}
+                                </span>
+                            )}
+                        </div>
+                    )}
+                </div>
+            </div>
+            <div className="flex-shrink-0 ml-1">
+                <button
+                    onClick={(e) => r.id && togglePin(r.id, !!r.pinned, e)}
+                    className={cn(
+                        "p-2 rounded-full transition-colors active:scale-90 flex items-center justify-center relative z-10",
+                        r.pinned ? "text-primary" : "text-transparent group-hover:text-muted-foreground/40"
+                    )}
+                >
+                    <Pin className={cn("w-4 h-4", r.pinned ? "fill-current" : "")} />
+                </button>
+            </div>
+        </div>
+    );
+}
 
 export function RecipeList({ onSelectRecipe, onCreateNew, onImportSuccess }: { onSelectRecipe: (id: string) => void, onCreateNew: () => void, onImportSuccess: (data: any) => void }) {
     const [recipes, setRecipes] = useState<Recipe[]>([]);
@@ -29,6 +108,13 @@ export function RecipeList({ onSelectRecipe, onCreateNew, onImportSuccess }: { o
 
     const [allTags, setAllTags] = useState<string[]>([]);
     const [showScrollTop, setShowScrollTop] = useState(false);
+    
+    const { addMultipleItems } = useShoppingListStore();
+    const { addSession } = useCookingStore();
+    const [longPressedRecipe, setLongPressedRecipe] = useState<Recipe | null>(null);
+    const [toastMessage, setToastMessage] = useState<string | null>(null);
+    const [addShopping, setAddShopping] = useState(true);
+    const [addCooking, setAddCooking] = useState(true);
 
     const SORT_OPTIONS: { value: SortAxis; label: string }[] = [
         { value: 'updatedAt', label: '更新日時' },
@@ -185,9 +271,70 @@ export function RecipeList({ onSelectRecipe, onCreateNew, onImportSuccess }: { o
         }
     };
 
-    const parseISOToMinutes = (iso: string) => {
-        const match = iso?.match(/PT(\d+)M/);
-        return match ? parseInt(match[1]) : 0;
+    const parseJson = (val: any) => {
+        try {
+            if (typeof val === "string") {
+                const parsed = JSON.parse(val);
+                return typeof parsed === "string" ? JSON.parse(parsed) : parsed;
+            }
+            return val;
+        } catch (e) {
+            return null;
+        }
+    };
+
+    const handleAddToLists = async () => {
+        if (!longPressedRecipe?.id || (!addShopping && !addCooking)) return;
+        
+        let messages = [];
+
+        if (addShopping) {
+            const ingredients = parseJson(longPressedRecipe.recipeIngredient);
+            if (ingredients) {
+                const items = ingredients.map((ing: any) => {
+                    const parts = [ing.name];
+                    if (ing.amount) parts.push(ing.amount);
+                    if (ing.unit) parts.push(ing.unit);
+                    const baseText = parts.join(" ");
+                    
+                    return {
+                        recipeId: longPressedRecipe.id,
+                        recipeName: longPressedRecipe.name,
+                        name: baseText,
+                        baseName: baseText,
+                        multiplier: 1,
+                        isChecked: false
+                    };
+                });
+                
+                try {
+                    await addMultipleItems(items);
+                    messages.push("買い物メモ");
+                } catch (err) {
+                    console.error(err);
+                }
+            }
+        }
+
+        if (addCooking) {
+            addSession({
+                recipeId: longPressedRecipe.id,
+                recipeName: longPressedRecipe.name,
+                imageUrl: (longPressedRecipe.images && longPressedRecipe.images.length > 0) ? longPressedRecipe.images[0] : undefined
+            });
+            messages.push("調理リスト");
+        }
+
+        if (messages.length > 0) {
+            setToastMessage(`${messages.join("と")}に追加しました`);
+            setTimeout(() => setToastMessage(null), 3000);
+        }
+        
+        setLongPressedRecipe(null);
+        setTimeout(() => {
+            setAddShopping(true);
+            setAddCooking(true);
+        }, 300); // delay reset so animation is smooth
     };
 
     if (loading) return <div className="p-12 text-center animate-pulse text-muted-foreground">Loading recipes...</div>;
@@ -458,57 +605,14 @@ export function RecipeList({ onSelectRecipe, onCreateNew, onImportSuccess }: { o
             ) : (
                 <div className="flex flex-col border-y border-border/40 divide-y divide-border/40 bg-card rounded-2xl shadow-sm overflow-hidden ring-1 ring-border/20">
                     {filteredRecipes.map((r) => {
-                        const prepMin = parseISOToMinutes(r.prepTime || "");
-                        const cookMin = parseISOToMinutes(r.cookTime || "");
-                        
                         return (
-                            <div
-                                key={r.id}
-                                onClick={() => r.id && onSelectRecipe(r.id)}
-                                className="group cursor-pointer flex items-center justify-between p-3.5 hover:bg-muted/30 transition-colors active:bg-muted"
-                            >
-                                <div className="flex items-center gap-3 overflow-hidden flex-1">
-                                    <div className="flex-shrink-0 flex items-center justify-center w-9 h-9 rounded-full bg-primary/10 text-primary border border-primary/20 shadow-sm shadow-primary/5 transition-shadow">
-                                        {r.cookingMode?.[0] === 'MAKE_AHEAD' ? <CookingPot className="w-5 h-5" /> : 
-                                         r.cookingMode?.[0] === 'LUNCH' ? <Sun className="w-5 h-5" /> : 
-                                         <Moon className="w-5 h-5" />}
-                                    </div>
-                                    <div className="flex flex-col overflow-hidden flex-1">
-                                        <div className="flex items-center gap-2">
-                                            <h3 className="text-sm sm:text-base font-extrabold truncate group-hover:text-primary transition-colors text-foreground">
-                                                {r.name}
-                                            </h3>
-                                        </div>
-                                        {(prepMin > 0 || cookMin > 0 || (r.tags && r.tags.length > 0)) && (
-                                            <div className="flex items-center gap-2 text-[10px] sm:text-xs text-muted-foreground mt-0.5 truncate font-bold">
-                                                {(prepMin > 0 || cookMin > 0) && (
-                                                    <span className="flex items-center gap-0.5 whitespace-nowrap">
-                                                        <Clock className="w-3 h-3 text-muted-foreground/70" />
-                                                        {prepMin > 0 && `${prepMin}m `}
-                                                        {cookMin > 0 && `${cookMin}m`}
-                                                    </span>
-                                                )}
-                                                {r.tags && r.tags.length > 0 && (
-                                                    <span className="text-muted-foreground/60 truncate">
-                                                        {r.tags.map(t => `#${t}`).join(" ")}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                                <div className="flex-shrink-0 ml-1">
-                                    <button
-                                        onClick={(e) => r.id && togglePin(r.id, !!r.pinned, e)}
-                                        className={cn(
-                                            "p-2 rounded-full transition-colors active:scale-90 flex items-center justify-center",
-                                            r.pinned ? "text-primary" : "text-transparent group-hover:text-muted-foreground/40"
-                                        )}
-                                    >
-                                        <Pin className={cn("w-4 h-4", r.pinned ? "fill-current" : "")} />
-                                    </button>
-                                </div>
-                            </div>
+                            <RecipeRow 
+                                key={r.id} 
+                                r={r} 
+                                onSelectRecipe={onSelectRecipe} 
+                                togglePin={togglePin} 
+                                onLongPress={setLongPressedRecipe}
+                            />
                         );
                     })}
                 </div>
@@ -564,6 +668,95 @@ export function RecipeList({ onSelectRecipe, onCreateNew, onImportSuccess }: { o
                     <ArrowUp className="w-5 h-5 mr-2" />
                     トップへ
                 </Button>
+            </div>
+            <Drawer open={!!longPressedRecipe} onOpenChange={(open) => !open && setLongPressedRecipe(null)}>
+                <DrawerContent className="rounded-t-[2.5rem] bg-background/95 backdrop-blur-3xl border-border/40">
+                    <div className="max-w-md mx-auto w-full px-6 pt-2 pb-28 sm:pb-8">
+                        <div className="mx-auto w-12 h-1.5 rounded-full bg-muted-foreground/20 mb-6" />
+                        
+                        <div className="text-center space-y-2 mb-6">
+                            <h2 className="text-2xl font-black tracking-tighter truncate px-4">{longPressedRecipe?.name}</h2>
+                            <p className="text-sm text-muted-foreground font-bold">どこに追加しますか？</p>
+                        </div>
+                        
+                        <div className="grid gap-4 mb-8">
+                            <label className={cn(
+                                "flex items-center justify-between p-4 rounded-2xl border-2 transition-all cursor-pointer group",
+                                addShopping 
+                                    ? "border-primary/20 bg-primary/5 shadow-sm" 
+                                    : "border-border/30 bg-background hover:border-border/50"
+                            )}>
+                                <div className="flex items-center gap-4">
+                                    <div className={cn(
+                                        "w-10 h-10 rounded-full flex items-center justify-center transition-colors",
+                                        addShopping ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20" : "bg-muted text-muted-foreground group-hover:bg-muted/80"
+                                    )}>
+                                        <ShoppingCart className="w-5 h-5" />
+                                    </div>
+                                    <span className={cn("font-bold text-lg transition-colors", addShopping ? "text-foreground" : "text-muted-foreground")}>買い物メモに追加</span>
+                                </div>
+                                <Checkbox 
+                                    checked={addShopping} 
+                                    onCheckedChange={(c) => setAddShopping(!!c)} 
+                                    className="w-6 h-6 rounded-md data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                                />
+                            </label>
+
+                            <label className={cn(
+                                "flex items-center justify-between p-4 rounded-2xl border-2 transition-all cursor-pointer group",
+                                addCooking 
+                                    ? "border-primary/20 bg-primary/5 shadow-sm" 
+                                    : "border-border/30 bg-background hover:border-border/50"
+                            )}>
+                                <div className="flex items-center gap-4">
+                                    <div className={cn(
+                                        "w-10 h-10 rounded-full flex items-center justify-center transition-colors",
+                                        addCooking ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20" : "bg-muted text-muted-foreground group-hover:bg-muted/80"
+                                    )}>
+                                        <Flame className="w-5 h-5" />
+                                    </div>
+                                    <span className={cn("font-bold text-lg transition-colors", addCooking ? "text-foreground" : "text-muted-foreground")}>調理リストに追加</span>
+                                </div>
+                                <Checkbox 
+                                    checked={addCooking} 
+                                    onCheckedChange={(c) => setAddCooking(!!c)} 
+                                    className="w-6 h-6 rounded-md data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                                />
+                            </label>
+                        </div>
+
+                        <div className="grid gap-3">
+                            <Button 
+                                size="lg" 
+                                disabled={!addShopping && !addCooking}
+                                onClick={handleAddToLists}
+                                className="h-14 rounded-2xl font-bold text-lg bg-primary text-primary-foreground shadow-xl shadow-primary/20"
+                            >
+                                追加する
+                            </Button>
+
+                            <Button 
+                                variant="ghost" 
+                                size="lg" 
+                                onClick={() => setLongPressedRecipe(null)}
+                                className="h-14 rounded-2xl font-bold hover:bg-muted text-lg text-muted-foreground"
+                            >
+                                キャンセル
+                            </Button>
+                        </div>
+                    </div>
+                </DrawerContent>
+            </Drawer>
+
+            {/* Floating Toast for Add */}
+            <div className={cn(
+                "fixed bottom-24 left-1/2 -translate-x-1/2 z-50 transition-all duration-300 pointer-events-none",
+                toastMessage ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+            )}>
+                <div className="bg-foreground text-background px-6 py-3 rounded-2xl text-sm font-bold shadow-2xl flex items-center gap-2">
+                    <ShoppingCart className="w-4 h-4" />
+                    {toastMessage}
+                </div>
             </div>
         </div>
     );
