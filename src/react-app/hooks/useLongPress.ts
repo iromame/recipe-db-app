@@ -8,9 +8,21 @@ export function useLongPress(
     const [longPressTriggered, setLongPressTriggered] = useState(false);
     const timeout = useRef<any>(null);
     const target = useRef<any>(null);
+    const isMoving = useRef<boolean>(false);
+    const startPos = useRef<{ x: number; y: number } | null>(null);
 
     const start = useCallback(
         (event: any) => {
+            isMoving.current = false;
+            if (event.touches && event.touches.length > 0) {
+                startPos.current = {
+                    x: event.touches[0].clientX,
+                    y: event.touches[0].clientY
+                };
+            } else {
+                startPos.current = null;
+            }
+
             if (shouldPreventDefault && event.target) {
                 event.target.addEventListener('touchend', preventDefault, {
                     passive: false
@@ -28,7 +40,9 @@ export function useLongPress(
     const clear = useCallback(
         (_event: any, shouldTriggerClick = true) => {
             timeout.current && clearTimeout(timeout.current);
-            shouldTriggerClick && !longPressTriggered && onClick();
+            if (shouldTriggerClick && !longPressTriggered && !isMoving.current) {
+                onClick();
+            }
             setLongPressTriggered(false);
             if (shouldPreventDefault && target.current) {
                 target.current.removeEventListener('touchend', preventDefault);
@@ -41,9 +55,27 @@ export function useLongPress(
         onMouseDown: (e: any) => start(e),
         onTouchStart: (e: any) => start(e),
         onMouseUp: (e: any) => clear(e),
-        onMouseLeave: (e: any) => clear(e, false),
+        onMouseLeave: (e: any) => {
+            isMoving.current = true;
+            clear(e, false);
+        },
         onTouchEnd: (e: any) => clear(e),
-        onTouchMove: (e: any) => clear(e, false)
+        onTouchMove: (e: any) => {
+            if (startPos.current && e.touches && e.touches.length > 0) {
+                const moveX = e.touches[0].clientX;
+                const moveY = e.touches[0].clientY;
+                const distance = Math.sqrt(
+                    Math.pow(moveX - startPos.current.x, 2) + Math.pow(moveY - startPos.current.y, 2)
+                );
+                if (distance > 10) {
+                    isMoving.current = true;
+                    clear(e, false);
+                }
+            } else {
+                isMoving.current = true;
+                clear(e, false);
+            }
+        }
     };
 }
 
