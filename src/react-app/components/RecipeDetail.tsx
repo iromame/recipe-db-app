@@ -7,7 +7,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Drawer, DrawerContent } from "@/components/ui/drawer";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext, type CarouselApi } from "@/components/ui/carousel";
-import { ChevronLeft, Edit, Sun, ExternalLink, Clock, Utensils, Tag, NotepadText, Copy, Check, Share2, Scale, Pin, ListPlus, CookingPot, Moon, ShoppingCart, Flame, Plus } from "lucide-react";
+import { ChevronLeft, Edit, Sun, ExternalLink, Clock, Utensils, Tag, NotepadText, Copy, Check, Share2, Scale, Pin, CookingPot, Moon, ShoppingCart, Flame, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCookingStore } from "../store/useCookingStore";
 import { useShoppingListStore } from "../store/useShoppingListStore";
