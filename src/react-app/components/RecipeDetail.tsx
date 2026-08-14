@@ -4,8 +4,10 @@ import { Recipe } from "../types/schema.org";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Drawer, DrawerContent } from "@/components/ui/drawer";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext, type CarouselApi } from "@/components/ui/carousel";
-import { ChevronLeft, Edit, Sun, ExternalLink, Clock, Utensils, Tag, NotepadText, Copy, Check, Share2, Scale, Pin, ListPlus, CookingPot, Moon, ShoppingCart } from "lucide-react";
+import { ChevronLeft, Edit, Sun, ExternalLink, Clock, Utensils, Tag, NotepadText, Copy, Check, Share2, Scale, Pin, ListPlus, CookingPot, Moon, ShoppingCart, Flame, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCookingStore } from "../store/useCookingStore";
 import { useShoppingListStore } from "../store/useShoppingListStore";
@@ -44,6 +46,9 @@ export function RecipeDetail({ id, onBack, onEdit }: { id: string, onBack: () =>
     const [addedToast, setAddedToast] = useState(false);
     const [cartToast, setCartToast] = useState<{show: boolean, msg: string}>({show: false, msg: ""});
     const [mdCopied, setMdCopied] = useState(false);
+    const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+    const [addShopping, setAddShopping] = useState(true);
+    const [addCooking, setAddCooking] = useState(true);
     const { addSession } = useCookingStore();
     const { addMultipleItems } = useShoppingListStore();
 
@@ -208,9 +213,26 @@ export function RecipeDetail({ id, onBack, onEdit }: { id: string, onBack: () =>
             setCartToast({ show: true, msg: `買い物リストに追加しました` });
             setTimeout(() => setCartToast({ show: false, msg: "" }), 3000);
         } catch (err) {
-            console.error(err);
+            console.error("Failed to add to cart", err);
             alert("買い物リストへの追加に失敗しました");
         }
+    };
+
+    const handleAddToLists = async () => {
+        if (!recipe || (!addShopping && !addCooking)) return;
+        
+        if (addShopping) {
+            await handleAddToCart();
+        }
+        if (addCooking) {
+            await handleAddToCookingList();
+        }
+        
+        setIsDrawerOpen(false);
+        setTimeout(() => {
+            setAddShopping(true);
+            setAddCooking(true);
+        }, 300);
     };
 
     if (loading) return <div className="p-12 text-center animate-pulse text-muted-foreground">Loading recipe details...</div>;
@@ -535,29 +557,98 @@ export function RecipeDetail({ id, onBack, onEdit }: { id: string, onBack: () =>
                     <Button 
                         size="lg" 
                         variant="ghost"
-                        onClick={handleAddToCart}
-                        className="h-14 px-5 rounded-none font-bold hover:bg-primary-foreground/10 shrink-0 gap-2 text-primary-foreground"
-                    >
-                        <ShoppingCart className="w-5 h-5" />
-                        <span>メモへ</span>
-                    </Button>
-                    <div className="w-[1px] h-8 bg-primary-foreground/20 shrink-0" />
-                    <Button 
-                        size="lg" 
-                        variant="ghost"
-                        onClick={handleAddToCookingList} 
+                        onClick={() => setIsDrawerOpen(true)} 
                         disabled={isAddingToQueue}
-                        className="h-14 px-6 rounded-none font-black tracking-widest gap-2 hover:bg-primary-foreground/10 text-primary-foreground"
+                        className="h-14 px-8 rounded-none font-black tracking-widest gap-2 hover:bg-primary-foreground/10 text-primary-foreground"
                     >
                         {isAddingToQueue ? (
                             <div className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
                         ) : (
-                            <ListPlus className="w-5 h-5" />
+                            <Plus className="w-5 h-5" />
                         )}
-                        <span>調理する</span>
+                        <span>追加する</span>
                     </Button>
                 </div>
             </div>
+            
+            <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
+                <DrawerContent className="rounded-t-[2.5rem] bg-background/95 backdrop-blur-3xl border-border/40">
+                    <div className="max-w-md mx-auto w-full px-6 pt-2 pb-28 sm:pb-8">
+                        <div className="mx-auto w-12 h-1.5 rounded-full bg-muted-foreground/20 mb-6" />
+                        
+                        <div className="text-center space-y-2 mb-6">
+                            <h2 className="text-2xl font-black tracking-tighter truncate px-4">{recipe?.name}</h2>
+                            <p className="text-sm text-muted-foreground font-bold">どこに追加しますか？</p>
+                        </div>
+                        
+                        <div className="grid gap-4 mb-8">
+                            <label className={cn(
+                                "flex items-center justify-between p-4 rounded-2xl border-2 transition-all cursor-pointer group",
+                                addShopping 
+                                    ? "border-primary/20 bg-primary/5 shadow-sm" 
+                                    : "border-border/30 bg-background hover:border-border/50"
+                            )}>
+                                <div className="flex items-center gap-4">
+                                    <div className={cn(
+                                        "w-10 h-10 rounded-full flex items-center justify-center transition-colors",
+                                        addShopping ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20" : "bg-muted text-muted-foreground group-hover:bg-muted/80"
+                                    )}>
+                                        <ShoppingCart className="w-5 h-5" />
+                                    </div>
+                                    <span className={cn("font-bold text-lg transition-colors", addShopping ? "text-foreground" : "text-muted-foreground")}>買い物メモに追加</span>
+                                </div>
+                                <Checkbox 
+                                    checked={addShopping} 
+                                    onCheckedChange={(c) => setAddShopping(!!c)} 
+                                    className="w-6 h-6 rounded-md data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                                />
+                            </label>
+
+                            <label className={cn(
+                                "flex items-center justify-between p-4 rounded-2xl border-2 transition-all cursor-pointer group",
+                                addCooking 
+                                    ? "border-primary/20 bg-primary/5 shadow-sm" 
+                                    : "border-border/30 bg-background hover:border-border/50"
+                            )}>
+                                <div className="flex items-center gap-4">
+                                    <div className={cn(
+                                        "w-10 h-10 rounded-full flex items-center justify-center transition-colors",
+                                        addCooking ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20" : "bg-muted text-muted-foreground group-hover:bg-muted/80"
+                                    )}>
+                                        <Flame className="w-5 h-5" />
+                                    </div>
+                                    <span className={cn("font-bold text-lg transition-colors", addCooking ? "text-foreground" : "text-muted-foreground")}>調理リストに追加</span>
+                                </div>
+                                <Checkbox 
+                                    checked={addCooking} 
+                                    onCheckedChange={(c) => setAddCooking(!!c)} 
+                                    className="w-6 h-6 rounded-md data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                                />
+                            </label>
+                        </div>
+
+                        <div className="grid gap-3">
+                            <Button 
+                                size="lg" 
+                                disabled={!addShopping && !addCooking}
+                                onClick={handleAddToLists}
+                                className="h-14 rounded-2xl font-bold text-lg bg-primary text-primary-foreground shadow-xl shadow-primary/20"
+                            >
+                                追加する
+                            </Button>
+
+                            <Button 
+                                variant="ghost" 
+                                size="lg" 
+                                onClick={() => setIsDrawerOpen(false)}
+                                className="h-14 rounded-2xl font-bold hover:bg-muted text-lg text-muted-foreground"
+                            >
+                                キャンセル
+                            </Button>
+                        </div>
+                    </div>
+                </DrawerContent>
+            </Drawer>
 		</div>
 	);
 }

@@ -1,0 +1,17 @@
+PRAGMA defer_foreign_keys=TRUE;
+INSERT INTO "recipe_tags" ("recipe_id","tag_id") VALUES('5e338353-7b14-457c-88f5-e43b50ec9b57','753e8cbb-025b-4f5f-88f3-2da7773c1b07');
+INSERT INTO "recipe_tags" ("recipe_id","tag_id") VALUES('08f6a0f8-6f6a-4fd5-8f21-8caf005998f9','69f4036c-3a32-4e1a-ba90-320ddc436e87');
+INSERT INTO "recipe_tags" ("recipe_id","tag_id") VALUES('c9d34a77-acd0-4822-acc1-3a8a5f0f3452','2992cac3-5f07-4386-83a2-c1a3fbcbefc1');
+INSERT INTO "recipe_tags" ("recipe_id","tag_id") VALUES('516fe313-1604-4a6b-abcf-4d5b0100ab20','69f4036c-3a32-4e1a-ba90-320ddc436e87');
+INSERT INTO "recipe_tags" ("recipe_id","tag_id") VALUES('26de8af8-ffe9-4763-9b67-7fcbc4dde9af','69f4036c-3a32-4e1a-ba90-320ddc436e87');
+INSERT INTO "recipe_tags" ("recipe_id","tag_id") VALUES('a9417b2b-b71d-491d-9195-7925ea614b11','69f4036c-3a32-4e1a-ba90-320ddc436e87');
+INSERT INTO "recipe_tags" ("recipe_id","tag_id") VALUES('4225d499-0af0-4ebd-87de-1d151f25fe63','305a96a7-dd7a-4007-914b-a1a96aaf26e9');
+INSERT INTO "recipe_tags" ("recipe_id","tag_id") VALUES('9f9b72ea-f6bc-4041-8e0c-11cada692089','69f4036c-3a32-4e1a-ba90-320ddc436e87');
+INSERT INTO "recipe_tags" ("recipe_id","tag_id") VALUES('62df799b-ea6e-40a0-96c4-843799b6ebd0','753e8cbb-025b-4f5f-88f3-2da7773c1b07');
+INSERT INTO "recipe_tags" ("recipe_id","tag_id") VALUES('a4a6c883-b016-4613-a124-577823642ce6','753e8cbb-025b-4f5f-88f3-2da7773c1b07');
+INSERT INTO "recipe_tags" ("recipe_id","tag_id") VALUES('70ab8d37-b45d-4f46-8126-2f6c22bbddd3','753e8cbb-025b-4f5f-88f3-2da7773c1b07');
+INSERT INTO "recipe_tags" ("recipe_id","tag_id") VALUES('de1b52f4-d416-4aa2-97b5-336f1a0d8377','753e8cbb-025b-4f5f-88f3-2da7773c1b07');
+INSERT INTO "recipe_tags" ("recipe_id","tag_id") VALUES('b7430426-f3b0-4287-b2a0-49558511f124','753e8cbb-025b-4f5f-88f3-2da7773c1b07');
+INSERT INTO "recipe_tags" ("recipe_id","tag_id") VALUES('bf8d91a6-4425-4da0-8771-ae57cc75b27e','753e8cbb-025b-4f5f-88f3-2da7773c1b07');
+INSERT INTO "recipe_tags" ("recipe_id","tag_id") VALUES('5afad4a0-8e39-4b84-b930-9648cc7401f3','753e8cbb-025b-4f5f-88f3-2da7773c1b07');
+INSERT INTO "recipe_tags" ("recipe_id","tag_id") VALUES('db58d87d-ac88-48a6-9de4-69f133a178f6','69f4036c-3a32-4e1a-ba90-320ddc436e87');
